@@ -7,6 +7,36 @@
 const APP_PATH = window.location.pathname.split('/pages/')[0] || window.location.pathname.split('/print/')[0] || '/ris-form-system';
 const API_BASE_URL = APP_PATH + '/api';
 
+// Collect Line Items - Helper Function
+function collectLineItems() {
+    const lineItems = [];
+    const lineItemRows = document.querySelectorAll('table tbody tr');
+    
+    lineItemRows.forEach((row) => {
+        const stockInput = row.querySelector('input[name^="stock_number_"]');
+        const unitInput = row.querySelector('input[name^="unit_"]');
+        const descInput = row.querySelector('input[name^="description_"]');
+        const qtyReqInput = row.querySelector('input[name^="quantity_requested_"]');
+        const qtyRecInput = row.querySelector('input[name^="quantity_received_"]');
+        const remarksInput = row.querySelector('input[name^="remarks_"]');
+        
+        // Only add rows with a description (required field)
+        if (descInput && descInput.value.trim()) {
+            const item = {
+                stock_number: stockInput?.value || '',
+                unit: unitInput?.value || '',
+                description: descInput.value.trim(),
+                quantity_requested: qtyReqInput?.value || 0,
+                quantity_received: qtyRecInput?.value || 0,
+                remarks: remarksInput?.value || ''
+            };
+            lineItems.push(item);
+        }
+    });
+    
+    return lineItems;
+}
+
 // Save RIS Form
 function saveRISForm() {
     if (!validateRISForm()) {
@@ -15,22 +45,8 @@ function saveRISForm() {
 
     const formData = new FormData(document.getElementById('ris-form'));
     
-    // Collect line items
-    const lineItems = [];
-    const lineItemRows = document.querySelectorAll('table tbody tr');
-    
-    lineItemRows.forEach((row, index) => {
-        const item = {
-            stock_number: row.querySelector(`[name="stock_number_${index}"]`)?.value || '',
-            unit: row.querySelector(`[name="unit_${index}"]`)?.value || '',
-            description: row.querySelector(`[name="description_${index}"]`)?.value || '',
-            quantity_requested: row.querySelector(`[name="quantity_requested_${index}"]`)?.value || 0,
-            quantity_received: row.querySelector(`[name="quantity_received_${index}"]`)?.value || 0,
-            remarks: row.querySelector(`[name="remarks_${index}"]`)?.value || ''
-        };
-        lineItems.push(item);
-    });
-
+    // Collect line items using helper function
+    const lineItems = collectLineItems();
     formData.append('line_items', JSON.stringify(lineItems));
 
     const saveBtn = document.querySelector('button[name="save"]');
@@ -73,22 +89,8 @@ function updateRISForm(risId) {
     const formData = new FormData(document.getElementById('ris-form'));
     formData.append('id', risId);
 
-    // Collect line items
-    const lineItems = [];
-    const lineItemRows = document.querySelectorAll('table tbody tr');
-    
-    lineItemRows.forEach((row, index) => {
-        const item = {
-            stock_number: row.querySelector(`[name="stock_number_${index}"]`)?.value || '',
-            unit: row.querySelector(`[name="unit_${index}"]`)?.value || '',
-            description: row.querySelector(`[name="description_${index}"]`)?.value || '',
-            quantity_requested: row.querySelector(`[name="quantity_requested_${index}"]`)?.value || 0,
-            quantity_received: row.querySelector(`[name="quantity_received_${index}"]`)?.value || 0,
-            remarks: row.querySelector(`[name="remarks_${index}"]`)?.value || ''
-        };
-        lineItems.push(item);
-    });
-
+    // Collect line items using helper function
+    const lineItems = collectLineItems();
     formData.append('line_items', JSON.stringify(lineItems));
 
     const updateBtn = document.querySelector('button[name="update"]');
@@ -261,6 +263,37 @@ function exportFormListToCSV() {
     const link = document.createElement('a');
     link.setAttribute('href', csvContent);
     link.setAttribute('download', `RIS_Forms_${new Date().toISOString().split('T')[0]}.csv`);
+    link.click();
+}
+
+// Export Table to CSV
+function exportTableToCSV(filename = 'export.csv') {
+    const table = document.querySelector('table');
+    if (!table) {
+        showAlert('No data to export', 'danger');
+        return;
+    }
+
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        let rowData = [];
+        const cols = row.querySelectorAll('td, th');
+        
+        cols.forEach(col => {
+            rowData.push('"' + col.innerText.replace(/"/g, '""') + '"');
+        });
+        
+        if (rowData.length > 0) {
+            csv.push(rowData.join(','));
+        }
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv.join('\n'));
+    const link = document.createElement('a');
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', filename);
     link.click();
 }
 

@@ -10,44 +10,90 @@ const API_BASE_URL = APP_PATH + '/api';
 // Collect Line Items - Helper Function
 function collectLineItems() {
     const lineItems = [];
-    const lineItemRows = document.querySelectorAll('table tbody tr');
+    const tableBody = document.querySelector('table tbody');
     
-    lineItemRows.forEach((row) => {
-        const stockInput = row.querySelector('input[name^="stock_number_"]');
-        const unitInput = row.querySelector('input[name^="unit_"]');
-        const descInput = row.querySelector('input[name^="description_"]');
-        const qtyReqInput = row.querySelector('input[name^="quantity_requested_"]');
-        const qtyRecInput = row.querySelector('input[name^="quantity_received_"]');
-        const remarksInput = row.querySelector('input[name^="remarks_"]');
+    if (!tableBody) {
+        console.error('Table body not found');
+        return lineItems;
+    }
+    
+    const rows = tableBody.querySelectorAll('tr');
+    console.log('Total rows in table:', rows.length);
+    
+    rows.forEach((row, rowIndex) => {
+        // Get all input fields in this row
+        const inputs = row.querySelectorAll('input[type="text"], input[type="number"]');
         
-        // Only add rows with a description (required field)
-        if (descInput && descInput.value.trim()) {
+        if (inputs.length >= 6) {
+            const stockNumber = inputs[0].value || '';
+            const unit = inputs[1].value || '';
+            const description = inputs[2].value || '';
+            const quantityRequested = parseInt(inputs[3].value) || 0;
+            const quantityReceived = parseInt(inputs[4].value) || 0;
+            const remarks = inputs[5].value || '';
+            
+            console.log(`Row ${rowIndex}:`, {
+                stock_number: stockNumber,
+                unit: unit,
+                description: description,
+                quantity_requested: quantityRequested,
+                quantity_received: quantityReceived,
+                remarks: remarks
+            });
+            
+            // Add all rows, even empty ones (will be filtered by backend)
             const item = {
-                stock_number: stockInput?.value || '',
-                unit: unitInput?.value || '',
-                description: descInput.value.trim(),
-                quantity_requested: qtyReqInput?.value || 0,
-                quantity_received: qtyRecInput?.value || 0,
-                remarks: remarksInput?.value || ''
+                stock_number: stockNumber,
+                unit: unit,
+                description: description,
+                quantity_requested: quantityRequested,
+                quantity_received: quantityReceived,
+                remarks: remarks
             };
             lineItems.push(item);
+            console.log('Added item to collection:', item);
         }
     });
     
+    console.log('Final line items collected:', lineItems);
+    console.log('Total items to save:', lineItems.length);
     return lineItems;
 }
 
 // Save RIS Form
 function saveRISForm() {
+    console.log('=== SAVE FORM STARTED ===');
+    
     if (!validateRISForm()) {
+        console.log('Form validation failed');
         return;
     }
 
-    const formData = new FormData(document.getElementById('ris-form'));
+    const formElement = document.getElementById('ris-form');
+    const formData = new FormData(formElement);
     
-    // Collect line items using helper function
+    // Collect line items
     const lineItems = collectLineItems();
+    
+    // Check if there are any items with descriptions
+    const hasDescription = lineItems.some(item => item.description && item.description.trim());
+    
+    if (!hasDescription) {
+        showAlert('Please add at least one line item with a description', 'warning');
+        console.log('No items with description found');
+        return;
+    }
+    
+    console.log('=== SENDING TO API ===');
+    console.log('Form data entries:');
+    for (let [key, value] of formData.entries()) {
+        if (key !== 'line_items') {
+            console.log(`  ${key}: ${value}`);
+        }
+    }
+    
     formData.append('line_items', JSON.stringify(lineItems));
+    console.log('Line items JSON:', JSON.stringify(lineItems, null, 2));
 
     const saveBtn = document.querySelector('button[name="save"]');
     const originalText = saveBtn.textContent;
@@ -58,30 +104,41 @@ function saveRISForm() {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('=== API RESPONSE ===');
+        console.log(data);
+        
         saveBtn.disabled = false;
         saveBtn.textContent = originalText;
 
         if (data.success) {
+            console.log('✓ Success! RIS ID:', data.ris_id);
             showAlert('Form saved successfully!', 'success');
             setTimeout(() => {
                 window.location.href = `view.php?id=${data.ris_id}`;
             }, 1500);
         } else {
+            console.log('✗ Failed:', data.message);
             showAlert(data.message || 'Failed to save form', 'danger');
         }
     })
     .catch(error => {
+        console.error('=== FETCH ERROR ===');
+        console.error(error);
         saveBtn.disabled = false;
         saveBtn.textContent = originalText;
-        console.error('Error:', error);
-        showAlert('An error occurred while saving the form', 'danger');
+        showAlert('An error occurred while saving the form: ' + error.message, 'danger');
     });
 }
 
 // Update RIS Form
 function updateRISForm(risId) {
+    console.log('=== UPDATE FORM STARTED ===');
+    
     if (!validateRISForm()) {
         return;
     }
@@ -89,8 +146,16 @@ function updateRISForm(risId) {
     const formData = new FormData(document.getElementById('ris-form'));
     formData.append('id', risId);
 
-    // Collect line items using helper function
+    // Collect line items
     const lineItems = collectLineItems();
+    
+    const hasDescription = lineItems.some(item => item.description && item.description.trim());
+    
+    if (!hasDescription) {
+        showAlert('Please add at least one line item with a description', 'warning');
+        return;
+    }
+    
     formData.append('line_items', JSON.stringify(lineItems));
 
     const updateBtn = document.querySelector('button[name="update"]');
@@ -104,6 +169,7 @@ function updateRISForm(risId) {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('API Response:', data);
         updateBtn.disabled = false;
         updateBtn.textContent = originalText;
 
@@ -117,9 +183,9 @@ function updateRISForm(risId) {
         }
     })
     .catch(error => {
+        console.error('Error:', error);
         updateBtn.disabled = false;
         updateBtn.textContent = originalText;
-        console.error('Error:', error);
         showAlert('An error occurred while updating the form', 'danger');
     });
 }
@@ -211,14 +277,14 @@ function removeLineItem(button) {
     row.remove();
 }
 
-// Print RIS Form - FIXED
+// Print RIS Form
 function printRISForm(risId) {
     const printUrl = APP_PATH + '/print/print-form.php?id=' + risId;
     console.log('Opening print URL:', printUrl);
     window.open(printUrl, '_blank');
 }
 
-// Generate Report - FIXED
+// Generate Report
 function generateReport(filters = {}) {
     const params = new URLSearchParams();
     

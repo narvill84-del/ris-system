@@ -9,8 +9,22 @@ require_once '../config/database.php';
 $page_title = 'Dashboard';
 include '../includes/header.php';
 
-// Get forms for display
-$query = "SELECT * FROM ris_forms ORDER BY created_at DESC LIMIT 20";
+// Get forms for display with line items description
+$query = "SELECT 
+            rf.id,
+            rf.ris_number,
+            rf.ris_date,
+            rf.office_name,
+            rf.requested_by,
+            rf.purpose,
+            rf.status,
+            rf.created_at,
+            GROUP_CONCAT(rli.description SEPARATOR ', ') as line_descriptions
+         FROM ris_forms rf
+         LEFT JOIN ris_line_items rli ON rf.id = rli.ris_id
+         GROUP BY rf.id
+         ORDER BY rf.created_at DESC 
+         LIMIT 20";
 $result = $conn->query($query);
 ?>
 
@@ -104,7 +118,14 @@ $result = $conn->query($query);
                             <td><?php echo date(DISPLAY_DATE_FORMAT, strtotime($form['ris_date'])); ?></td>
                             <td><?php echo htmlspecialchars($form['office_name']); ?></td>
                             <td><?php echo htmlspecialchars($form['requested_by'] ?? 'N/A'); ?></td>
-                            <td><?php echo htmlspecialchars(substr($form['purpose'], 0, 50)) . (strlen($form['purpose']) > 50 ? '...' : ''); ?></td>
+                            <td>
+                                <?php 
+                                    // Display line item descriptions if available, otherwise show purpose
+                                    $description = $form['line_descriptions'] ?? $form['purpose'];
+                                    $display_text = htmlspecialchars(substr($description, 0, 50)) . (strlen($description) > 50 ? '...' : '');
+                                    echo $display_text;
+                                ?>
+                            </td>
                             <td>
                                 <span class="badge badge-<?php echo strtolower($form['status']); ?>">
                                     <?php echo $form['status']; ?>
@@ -134,3 +155,6 @@ $result = $conn->query($query);
 </div>
 
 <?php include '../includes/footer.php'; ?>
+
+<script src="<?php echo APP_URL; ?>/js/form-validation.js"></script>
+<script src="<?php echo APP_URL; ?>/js/form-handler.js"></script>

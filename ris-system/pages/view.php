@@ -69,9 +69,9 @@ $items_result = $items_stmt->get_result();
                 </div>
             </div>
 
-            <!-- Description/Purpose -->
+            <!-- Purpose Section -->
             <div style="margin: 2rem 0; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
-                <strong>Description:</strong><br>
+                <strong>Purpose:</strong><br>
                 <?php echo nl2br(htmlspecialchars($form['purpose'] ?? '')); ?>
             </div>
 
@@ -96,7 +96,7 @@ $items_result = $items_stmt->get_result();
                     <tr>
                         <td><?php echo htmlspecialchars($item['stock_number'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($item['unit'] ?? ''); ?></td>
-                        <td><?php echo htmlspecialchars($item['description']); ?></td>
+                        <td><?php echo htmlspecialchars($item['description'] ?? ''); ?></td>
                         <td><?php echo $item['quantity_requested']; ?></td>
                         <td><?php echo $item['quantity_received']; ?></td>
                         <td><?php echo htmlspecialchars($item['remarks'] ?? ''); ?></td>

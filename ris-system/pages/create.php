@@ -143,3 +143,6 @@ $ris_number = generate_ris_number($conn);
 </div>
 
 <?php include '../includes/footer.php'; ?>
+
+<script src="<?php echo APP_URL; ?>/js/form-validation.js"></script>
+<script src="<?php echo APP_URL; ?>/js/form-handler.js"></script>

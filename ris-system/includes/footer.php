@@ -38,11 +38,7 @@ $website_display = preg_replace(
         width: 100%;
         padding: 24px 20px;
         color: #918a7a;
-        background: linear-gradient(
-            180deg,
-            #11100d 0%,
-            #080808 100%
-        );
+        background: linear-gradient(180deg, #11100d 0%, #080808 100%);
         border-top: 1px solid rgba(212, 175, 55, 0.2);
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     }
@@ -58,142 +54,51 @@ $website_display = preg_replace(
         width: 75px;
         height: 2px;
         margin: 0 auto 14px;
-        background: linear-gradient(
-            90deg,
-            transparent,
-            #d4af37,
-            transparent
-        );
+        background: linear-gradient(90deg, transparent, #d4af37, transparent);
     }
 
-    .footer p {
-        margin: 6px 0;
-        color: #918a7a;
-        font-size: 0.82rem;
-        line-height: 1.6;
-    }
+    .footer p { margin: 6px 0; color: #918a7a; font-size: 0.82rem; line-height: 1.6; }
+    .footer strong { color: #f3d77a; font-weight: 700; }
+    .footer-link { color: #d4af37; text-decoration: none; border-bottom: 1px solid rgba(212, 175, 55, 0.35); }
+    .footer-link:hover, .footer-link:focus { color: #f3d77a; border-bottom-color: #f3d77a; }
+    .footer-link:focus { outline: 3px solid rgba(212, 175, 55, 0.28); outline-offset: 3px; border-radius: 3px; }
 
-    .footer strong {
-        color: #f3d77a;
-        font-weight: 700;
-    }
-
-    .footer-link {
-        color: #d4af37;
-        text-decoration: none;
-        border-bottom: 1px solid rgba(212, 175, 55, 0.35);
-        transition: color 0.2s ease, border-color 0.2s ease;
-    }
-
-    .footer-link:hover,
-    .footer-link:focus {
-        color: #f3d77a;
-        border-bottom-color: #f3d77a;
-    }
-
-    .footer-link:focus {
-        outline: 3px solid rgba(212, 175, 55, 0.28);
-        outline-offset: 3px;
-        border-radius: 3px;
-    }
-
-    /*
-     * Offset the footer on the dashboard because the dashboard sidebar
-     * is fixed on the left side of the screen.
-     */
     <?php if ($is_dashboard): ?>
-        .footer {
-            width: calc(100% - 270px);
-            margin-left: 270px;
-        }
+        .footer { width: calc(100% - 270px); margin-left: 270px; }
     <?php endif; ?>
 
     @media (max-width: 768px) {
-        .footer {
-            width: 100%;
-            margin-left: 0;
-            padding: 20px 14px;
-        }
-
-        .footer p {
-            font-size: 0.76rem;
-        }
+        .footer { width: 100%; margin-left: 0; padding: 20px 14px; }
+        .footer p { font-size: 0.76rem; }
     }
 </style>
 
-<footer
-    class="footer"
-    role="contentinfo"
-    aria-label="Site footer">
-
+<footer class="footer" role="contentinfo" aria-label="Site footer">
     <div class="footer-content">
         <div class="footer-divider"></div>
-
         <p>
             &copy; <?php echo date('Y'); ?>
-
-            <strong>
-                <?php echo htmlspecialchars(
-                    $lgu_name,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>
-            </strong>
-
-            &mdash; RIS Form System
-            v<?php echo htmlspecialchars(
-                $app_version,
-                ENT_QUOTES,
-                'UTF-8'
-            ); ?>
+            <strong><?php echo htmlspecialchars($lgu_name, ENT_QUOTES, 'UTF-8'); ?></strong>
+            &mdash; RIS Form System v<?php echo htmlspecialchars($app_version, ENT_QUOTES, 'UTF-8'); ?>
         </p>
-
         <p>
-            All rights reserved.
-            For inquiries, please visit
-
-            <a
-                class="footer-link"
-                href="<?php echo htmlspecialchars(
-                    $lgu_website,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>"
-                target="_blank"
-                rel="noopener noreferrer">
-                <?php echo htmlspecialchars(
-                    $website_display,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>
+            All rights reserved. For inquiries, please visit
+            <a class="footer-link" href="<?php echo htmlspecialchars($lgu_website, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
+                <?php echo htmlspecialchars($website_display, ENT_QUOTES, 'UTF-8'); ?>
             </a>.
         </p>
     </div>
 </footer>
 
-    <?php
-    $validation_js = $app_url . '/js/form-validation.js';
-    $handler_js = $app_url . '/js/form-handler.js';
-    ?>
+<?php $print_actions_js = $app_url . '/js/print-actions.js'; ?>
+<script src="<?php echo htmlspecialchars($print_actions_js, ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
-    <script
-        src="<?php echo htmlspecialchars(
-            $validation_js,
-            ENT_QUOTES,
-            'UTF-8'
-        ); ?>"
-        defer>
-    </script>
-
-    <script
-        src="<?php echo htmlspecialchars(
-            $handler_js,
-            ENT_QUOTES,
-            'UTF-8'
-        ); ?>"
-        defer>
-    </script>
-
+<?php
+$validation_js = $app_url . '/js/form-validation.js';
+$handler_js = $app_url . '/js/form-handler.js';
+?>
+<script src="<?php echo htmlspecialchars($validation_js, ENT_QUOTES, 'UTF-8'); ?>" defer></script>
+<script src="<?php echo htmlspecialchars($handler_js, ENT_QUOTES, 'UTF-8'); ?>" defer></script>
 
 </body>
 </html>

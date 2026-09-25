@@ -292,21 +292,25 @@ $status_class = trim($status_class, '-');
 
     .view-card-body {
         padding: 24px;
+        background: linear-gradient(90deg, rgba(212, 175, 55, 0.12), transparent);
+        color: var(--text);
     }
 
     .ris-document {
         padding: 22px;
-        color: #111;
-        background: #fff;
-        border: 1px solid rgba(0, 0, 0, 0.08);
+        color: var(--text);
+        border-color: var(--line-strong);
         border-radius: 12px;
+        border: 2px solid var(--line);
     }
 
     .ris-header {
         margin-bottom: 20px;
         padding-bottom: 14px;
-        border-bottom: 2px solid #000;
+        /* border-bottom: 2px solid #000; */
+        border-color: var(--line-strong);
         text-align: center;
+        color: var(--text);
     }
 
     .ris-header img {
@@ -331,43 +335,58 @@ $status_class = trim($status_class, '-');
         gap: 12px;
         margin-bottom: 20px;
         padding: 14px;
-        background: #f8f9fa;
-        border: 1px solid #dfe3e8;
+        background: linear-gradient(90deg, rgba(212, 175, 55, 0.12), transparent);
+        /* border: 1px solid #dfe3e8; 
+        border-color: var(--line-strong);*/
+        border: 1px solid var(--line);
         border-radius: 8px;
+        color: var(--text);
     }
 
     .info-grid div {
         font-size: 0.97rem;
+        color: var(--text);
+        border: 1px solid var(--line);
+        padding: 8px;
+        border-radius: 8px;
     }
 
     .purpose-box {
         margin: 18px 0;
         padding: 14px;
-        border: 1px solid #ddd;
+        border: 1px solid var(--line);
         border-radius: 8px;
-        background: #fafafa;
+        background: linear-gradient(90deg, rgba(212, 175, 55, 0.12), transparent);
+        color: var(--text);
+        /**/
     }
 
     .ris-table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 16px;
-        border: 1px solid #000;
+        /* border: 1px solid #000; */
+        border-color: var(--line-strong);
+        color: var(--text);
     }
 
     .ris-table th,
     .ris-table td {
         border: 1px solid #000;
         padding: 9px;
-        text-align: left;
+        text-align: center;
         vertical-align: top;
+        color: var(--text);
+        border-color: var(--line-strong);
     }
 
     .ris-table th {
-        background: #f0f0f0;
+        background: linear-gradient(90deg, rgba(212, 175, 55, 0.12), transparent);
         font-size: 0.82rem;
         text-transform: uppercase;
         text-align: center;
+        color: var(--text);
+        border-color: var(--line-strong);
     }
 
     .signature-table {
@@ -386,7 +405,7 @@ $status_class = trim($status_class, '-');
     .signature-line {
         height: 62px;
         margin: 12px 0 8px;
-        border-bottom: 2px solid #000;
+        border-bottom: 2px solid #b3b3b3;
     }
 
     .badge {
@@ -640,14 +659,10 @@ $status_class = trim($status_class, '-');
     </aside>
 
     <main class="main-content">
-        <div class="page-header">
-            <h1>View RIS Form</h1>
-            <p>Detailed record and printable form</p>
-        </div>
 
         <section class="view-card">
             <div class="view-card-header">
-                <h2>Requisition and Issue Slip (RIS)</h2>
+                <h2>View Requisition and Issue Slip (RIS)</h2>
             </div>
 
             <div class="view-card-body">
@@ -658,7 +673,7 @@ $status_class = trim($status_class, '-');
                         <p>Province of Zamboanga del Sur</p>
                         <p><strong>MUNICIPALITY OF MARGOSATUBIG</strong></p>
                         <p>Margosatubig, Zamboanga del Sur</p>
-                        <h3>REQUISITION AND ISSUE SLIP FORM</h3>
+                        <h3>REQUISITION AND ISSUE SLIP</h3>
                     </div>
 
                     <div class="info-grid">
@@ -745,8 +760,28 @@ $status_class = trim($status_class, '-');
                 </div>
 
                 <div class="view-actions">
-                    <a href="edit.php?id=<?php echo (int) $ris_id; ?>" class="btn btn-primary">Edit Form</a>
-                    <a href="../print/print-form.php?id=<?php echo (int) $ris_id; ?>" target="_blank" rel="noopener noreferrer" class="btn btn-warning">Print</a>
+                    <a 
+                        href="edit.php?id=<?php echo (int) $ris_id; ?>" 
+                        class="btn btn-primary">
+                        Edit Form
+                    </a>
+
+                    <a
+                        href="../print/print-form.php?id=<?php echo (int) $ris_id; ?>"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn btn-warning">
+                        Print
+                    </a>
+                    
+                    <a
+                        href="../print/print-invoice.php?id=<?php echo (int) $ris_id; ?>"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn btn-warning">
+                        Invoice
+                    </a>
+
                     <button type="button" class="btn btn-danger" onclick="if (typeof deleteRISForm === 'function') { deleteRISForm(<?php echo (int) $ris_id; ?>); } else { if (confirm('Delete this form?')) { window.location.href = 'index.php'; } }">Delete</button>
                     <a href="index.php" class="btn btn-secondary">Back to Dashboard</a>
                 </div>

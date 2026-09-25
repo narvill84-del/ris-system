@@ -57,14 +57,12 @@ $generated_at = date('F d, Y H:i:s');
 $office = $form['office_name'] ?? '';
 $municipality = 'Margosatubig';
 $province = 'Zamboanga del Sur';
-$requested_by = $form['requested_by'] ?? '';
-$requested_designation = $form['requested_by_designation'] ?? '';
 $approved_by = $form['approved_by'] ?? '';
 $approved_designation = $form['approved_by_designation'] ?? 'Acting Municipal Treasurer';
 $received_by = $form['received_by'] ?? '';
 $received_designation = $form['received_by_designation'] ?? 'Receiving Officer';
 
-/* Checked By and Witness remain independent and blank by default. */
+/* These two values are intentionally independent and blank by default. */
 $checked_by = trim((string) ($_GET['checked_by'] ?? ''));
 $witness_name = trim((string) ($_GET['witness_name'] ?? ''));
 ?>
@@ -91,14 +89,7 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .line { display: inline-block; min-width: 42mm; border-bottom: 1px solid #000; }
 .office { margin-top: 1mm; border-top: 1px solid #000; border-bottom: 1px solid #000; }
 .office td { padding: 1.5mm 1mm; text-align: center; font-size: 7.5pt; font-weight: 700; }
-.office small, .recipient small { display: block; font-size: 6pt; font-weight: 400; font-style: italic; }
-.recipient { margin-top: 1.5mm; border-bottom: 1px solid #000; }
-.recipient td { height: 8mm; padding: 1mm 2mm; font-size: 7.5pt; font-weight: 700; vertical-align: middle; }
-.recipient .recipient-name { width: 30%; text-align: left; }
-.recipient .recipient-title { width: 28%; text-align: center; }
-.recipient .recipient-office { width: 25%; text-align: center; }
-.recipient .recipient-location { width: 17%; text-align: center; }
-.recipient .recipient-name strong { text-decoration: underline; text-transform: uppercase; }
+.office small { display: block; font-size: 6pt; font-weight: 400; font-style: italic; }
 .forms { margin-top: 2mm; border: 1px solid #000; }
 .forms th, .forms td { height: 7mm; padding: 1mm; border: 1px solid #000; font-size: 7pt; text-align: center; vertical-align: middle; overflow-wrap: anywhere; }
 .forms th { background: #f3f3f3; font-size: 6.5pt; text-transform: uppercase; }
@@ -118,7 +109,44 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .no-print .controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
 .no-print label { display: inline-flex; flex-direction: column; font-size: 11px; font-weight: 600; text-align: left; }
 .no-print input { width: 180px; padding: 7px 10px; border: 1px solid #bbb; border-radius: 6px; }
-.no-print button { margin: 0 4px; padding: 8px 14px; cursor: pointer; }
+/*.no-print button { margin: 0 4px; padding: 8px 14px; cursor: pointer; } */
+
+.btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: 10px 18px;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+    .btn-primary {
+        color: #17120a;
+        background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+        border-color: var(--gold-light);
+        background: linear-gradient(135deg, #f1cb67, #b8891c);
+        border-color: #f1cb67;
+    }
+
+    .btn-secondary {
+        color: var(--gold-light);
+        background: rgba(212, 175, 55, 0.05);
+        border-color: var(--line);
+
+        background: linear-gradient(135deg, #f1cb67, #b8891c);
+        border-color: #f1cb67;
+    }
+
 @media print { .no-print { display: none !important; } }
 </style>
 </head>
@@ -126,11 +154,18 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 <form id="invoiceForm" method="get" class="no-print">
     <input type="hidden" name="id" value="<?php echo (int) $ris_id; ?>">
     <div class="controls">
-        <label>Checked by<input type="text" name="checked_by" value="<?php echo $h($checked_by); ?>" placeholder="Leave blank"></label>
-        <label>Witness<input type="text" name="witness_name" value="<?php echo $h($witness_name); ?>" placeholder="Leave blank"></label>
-        <button type="submit">Apply</button>
-        <button type="button" onclick="window.print()">Print Invoice</button>
-        <button type="button" onclick="window.close()">Close</button>
+        <label>
+            Checked by
+            <input type="text" name="checked_by" value="<?php echo $h($checked_by); ?>" placeholder="Leave blank">
+        </label>
+        <label>
+            Witness
+            <input type="text" name="witness_name" value="<?php echo $h($witness_name); ?>" placeholder="Leave blank">
+        </label>
+        <button class="btn btn-primary" type="submit">Apply</button>
+        <button class="btn btn-primary" type="button" onclick="window.print()">Print Invoice</button>
+        <button class="btn btn-secondary" type="button" onclick="window.close()">Close</button>
+        <a href="../pages/index.php" class="btn btn-secondary">Back to Dashboard</a>
     </div>
 </form>
 
@@ -161,27 +196,6 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         </tr>
     </table>
 
-    <!-- Recipient block shown in the red rectangle of the reference image. -->
-    <table class="recipient">
-        <tr>
-            <td class="recipient-name">
-                To Mr./Ms.<br>
-                <strong><?php echo $h($requested_by); ?></strong>
-            </td>
-            <td class="recipient-title">
-                <?php echo $h($requested_designation ?: 'ACTING MUNICIPAL TREASURER'); ?>
-            </td>
-            <td class="recipient-office">
-                Municipal Treasurer's Office<br>
-                <small>(Bureau of Office)</small>
-            </td>
-            <td class="recipient-location">
-                <?php echo $h($municipality); ?><br>
-                <small>(Municipality)</small>
-            </td>
-        </tr>
-    </table>
-
     <table class="forms">
         <thead><tr><th style="width:10%">Quantity</th><th style="width:22%">Designation of Forms</th><th style="width:26%">Denomination / Value of Forms</th><th style="width:12%">Serial Number From</th><th style="width:12%">Serial Number To</th><th style="width:18%">Remarks / Office</th></tr></thead>
         <tbody>
@@ -203,7 +217,7 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         THIS IS TO CERTIFY THAT I HAVE THIS
         <span class="underline"><?php echo $h($date($form['ris_date'] ?? null, 'd')); ?></span>
         DAY OF <span class="underline"><?php echo $h($date($form['ris_date'] ?? null, 'F Y')); ?></span>,<br>
-        RECEIVED THE ABOVE <span class="underline"><?php echo $h($total_quantity); ?></span>
+        RECEIVED THE ABOVE <span class=\"underline\"><?php echo $h($total_quantity); ?></span>
         (No. of Pads) ACCOUNTABLE FORMS,<br>
         ALL ARE NUMBERED CONSECUTIVELY.<br><br>
         <strong><?php echo $h($received_by ?: '________________'); ?></strong><br>
@@ -212,16 +226,32 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
     <table class="certification-table">
         <tr>
-            <td>Checked by:<br><br><strong><?php echo $h($checked_by ?: '________________'); ?></strong></td>
-            <td><strong><?php echo $h($approved_by ?: '________________'); ?></strong><br><?php echo $h($approved_designation ?: 'Acting Municipal Treasurer'); ?></td>
+            <td>
+                Checked by:<br><br>
+                <strong><?php echo $h($checked_by ?: '________________'); ?></strong>
+            </td>
+            <td>
+                <strong><?php echo $h($approved_by ?: '________________'); ?></strong><br>
+                <?php echo $h($approved_designation ?: 'Acting Municipal Treasurer'); ?>
+            </td>
             <td class="total">TOTAL VALUE<br>₱ 0.00</td>
         </tr>
     </table>
 
     <table class="signatures">
         <tr>
-            <td>I hereby acknowledge receipt of the accountable forms above specified.<br><br><div class="signature-line"></div><span class="signature-name"><?php echo $h($witness_name ?: '________________'); ?></span><span class="signature-role">Witness</span></td>
-            <td>Requisition filed and received in the presence of the undersigned.<br><br><div class="signature-line"></div><span class="signature-name"><?php echo $h($approved_by ?: '________________'); ?></span><span class="signature-role"><?php echo $h($approved_designation ?: 'Acting Municipal Treasurer'); ?></span></td>
+            <td>
+                I hereby acknowledge receipt of the accountable forms above specified.<br><br>
+                <div class="signature-line"></div>
+                <span class="signature-name"><?php echo $h($witness_name ?: '________________'); ?></span>
+                <span class="signature-role">Witness</span>
+            </td>
+            <td>
+                Requisition filed and received in the presence of the undersigned.<br><br>
+                <div class="signature-line"></div>
+                <span class="signature-name"><?php echo $h($approved_by ?: '________________'); ?></span>
+                <span class="signature-role"><?php echo $h($approved_designation ?: 'Acting Municipal Treasurer'); ?></span>
+            </td>
         </tr>
     </table>
 </main>

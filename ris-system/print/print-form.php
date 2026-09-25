@@ -66,21 +66,21 @@ $items_result = $items_stmt->get_result();
         <table style="width: 100%; margin: 1.5rem 0; border-collapse: collapse;">
             <tr>
                 <td style="width: 50%; padding: 0.5rem;">
-                    <P>OFFICE:<strong> <?php echo htmlspecialchars($form['office_name']); ?></strong></p>
+                    <P>OFFICE:<strong style="border-bottom: 1px solid #000;"> <?php echo htmlspecialchars($form['office_name']); ?></strong></p>
                 </td>
                 <td style="width: 50%; padding: 0.5rem;">
                     <strong>Responsibility Center</strong>
-                    <p>Code:<strong> <?php echo htmlspecialchars($form['responsibility_center_code'] ?? ''); ?></strong></p>
+                    <p>Code:<strong style="border-bottom: 1px solid #000;"> <?php echo htmlspecialchars($form['responsibility_center_code'] ?? ''); ?></strong></p>
                 </td>
             </tr>
             <tr>
                 <td style="padding: 0.5rem;">
-                    <p>RIS No.: <strong> <?php echo htmlspecialchars($form['ris_number']); ?></strong></p>
-                    <p>Date: <strong> <?php echo date('m/d/Y', strtotime($form['ris_date'])); ?></strong></p>
+                    <p>RIS No.: <strong style="border-bottom: 1px solid #000;"> <?php echo htmlspecialchars($form['ris_number']); ?></strong></p>
+                    <p>Date: <strong style="border-bottom: 1px solid #000;"> <?php echo date('m/d/Y', strtotime($form['ris_date'])); ?></strong></p>
                 </td>
                 <td style="padding: 0.5rem;">
-                    <p>SAI No.:<strong> <?php echo htmlspecialchars($form['sai_number'] ?? ''); ?></strong></p>
-                   <p> Date:  <strong> <?php echo $form['sai_date'] ? date('m/d/Y', strtotime($form['sai_date'])) : ''; ?></strong></p>
+                    <p>SAI No.:<strong style="border-bottom: 1px solid #000;"> <?php echo htmlspecialchars($form['sai_number'] ?? ''); ?></strong></p>
+                   <p> Date:  <strong style="border-bottom: 1px solid #000;"> <?php echo $form['sai_date'] ? date('m/d/Y', strtotime($form['sai_date'])) : ''; ?></strong></p>
                 </td>
             </tr>
         </table>
@@ -107,7 +107,7 @@ $items_result = $items_stmt->get_result();
                     <tr>
                         <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo htmlspecialchars($item['stock_number'] ?? ''); ?></td>
                         <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo htmlspecialchars($item['unit'] ?? ''); ?></td>
-                        <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo htmlspecialchars($item['description']); ?></td>
+                        <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo htmlspecialchars($item['descriptions']); ?></td>
                         <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo $item['quantity_requested']; ?></td>
                         <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo $item['quantity_received']; ?></td>
                         <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo htmlspecialchars($item['remarks'] ?? ''); ?></td>
@@ -132,7 +132,7 @@ $items_result = $items_stmt->get_result();
         <table style="width: 100%; margin-top: 2rem; border-collapse: collapse;">
             <tr>
                 <td style="width: 33%; text-align: center; padding: 1rem;">
-                    <p style="margin-top: 0.5rem;">Requested by</p>
+                    <p style="margin-top: 0.5rem; text-align: left;">Requested by</p>
                     <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 0.5rem;"></div>
                     <strong><?php echo htmlspecialchars($form['requested_by'] ?? ''); ?></strong><br>
                     <small><?php echo htmlspecialchars($form['requested_by_designation'] ?? ''); ?></small><br>
@@ -140,7 +140,7 @@ $items_result = $items_stmt->get_result();
                     
                 </td>
                 <td style="width: 33%; text-align: center; padding: 1rem;">
-                    <p style="margin-top: 0.5rem;">Approved by</p>
+                    <p style="margin-top: 0.5rem; text-align: left;">Approved by</p>
                     <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 0.5rem;"></div>
                     <strong><?php echo htmlspecialchars($form['approved_by'] ?? ''); ?></strong><br>
                     <small><?php echo htmlspecialchars($form['approved_by_designation'] ?? ''); ?></small><br>
@@ -148,7 +148,7 @@ $items_result = $items_stmt->get_result();
                     
                 </td>
                 <td style="width: 33%; text-align: center; padding: 1rem;">
-                    <p style="margin-top: 0.5rem;">Received by</p>
+                    <p style="margin-top: 0.5rem; text-align: left;">Received by</p>
                     <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 0.5rem;"></div>
                     <strong><?php echo htmlspecialchars($form['received_by'] ?? ''); ?></strong><br>
                     <small><?php echo htmlspecialchars($form['received_by_designation'] ?? ''); ?></small><br>

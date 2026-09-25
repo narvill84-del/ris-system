@@ -1,0 +1,137 @@
+/* sidebar.css - modern responsive sidebar */
+:root{
+  --sidebar-bg: #0b2545;
+  --sidebar-fg: #e6eef8;
+  --sidebar-accent: #0ea5a4;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --transition: 250ms cubic-bezier(.2,.9,.2,1);
+  --muted: rgba(230,238,248,0.7);
+}
+
+.app-layout { display: flex; min-height: 100vh; background:#f6f8fb; }
+
+/* Sidebar */
+.app-sidebar {
+  width: var(--sidebar-width);
+  background: linear-gradient(180deg,var(--sidebar-bg) 0%, #05324a 100%);
+  color: var(--sidebar-fg);
+  transition: width var(--transition);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  box-sizing: border-box;
+  gap: 12px;
+}
+
+.app-sidebar.collapsed { width: var(--sidebar-collapsed-width); }
+
+.sidebar-header {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  justify-content: space-between;
+}
+
+.brand {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--sidebar-fg);
+  text-decoration:none;
+}
+.brand .brand-icon { opacity:0.95; }
+.brand .brand-name { font-weight:600; font-size:1rem; white-space:nowrap; }
+
+.sidebar-toggle {
+  background: transparent;
+  border: none;
+  color: var(--sidebar-fg);
+  cursor: pointer;
+  padding:6px;
+  border-radius:6px;
+}
+.sidebar-toggle:focus { outline: 2px solid rgba(255,255,255,0.12); }
+
+.sidebar-search input {
+  width: 100%;
+  padding:8px 10px;
+  border-radius:8px;
+  border: none;
+  background: rgba(255,255,255,0.06);
+  color: var(--sidebar-fg);
+  box-sizing:border-box;
+}
+.sidebar-search input::placeholder { color: var(--muted); }
+
+.sidebar-nav {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  overflow:auto;
+  padding-right:6px;
+}
+
+.nav-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+  border-radius:8px;
+  color:var(--sidebar-fg);
+  text-decoration:none;
+  font-weight:500;
+  background: transparent;
+  transition: background var(--transition), transform var(--transition);
+  border: none;
+  text-align:left;
+  width:100%;
+  box-sizing:border-box;
+  cursor:pointer;
+}
+.nav-item:hover { background: rgba(255,255,255,0.04); transform:translateY(-1px); }
+.nav-item.active { background: linear-gradient(90deg, rgba(14,165,164,0.12), rgba(14,165,164,0.06)); box-shadow: inset 0 0 0 1px rgba(14,165,164,0.06); }
+
+.nav-item .nav-icon { display:inline-flex; align-items:center; justify-content:center; width:26px; color:var(--sidebar-accent); }
+
+.nav-text { white-space:nowrap; }
+
+/* Buttons inside nav */
+.nav-button { background: transparent; border:none; color:inherit; }
+
+/* Divider */
+.nav-divider { height:1px; background: rgba(255,255,255,0.04); margin:8px 0; border-radius:2px; }
+
+/* Footer */
+.sidebar-footer { margin-top:auto; padding:8px 4px; }
+.profile { display:flex; gap:8px; align-items:center; }
+.avatar {
+  width:36px;height:36px;border-radius:8px;background:var(--sidebar-accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#023233;
+}
+.profile-info { display:flex; flex-direction:column; font-size:0.85rem; }
+.profile-link { color:var(--muted); text-decoration:none; font-size:0.8rem; }
+
+/* Collapsed state styles: hide text, center icons */
+.app-sidebar.collapsed .brand-name,
+.app-sidebar.collapsed .nav-text,
+.app-sidebar.collapsed .sidebar-search,
+.app-sidebar.collapsed .profile-info,
+.app-sidebar.collapsed .profile-link { display: none; }
+.app-sidebar.collapsed .brand { justify-content:center; }
+.app-sidebar.collapsed .nav-item { justify-content:center; padding-left:0; padding-right:0; }
+
+/* Main content area */
+.app-main {
+  flex:1;
+  padding:20px;
+  box-sizing:border-box;
+}
+
+/* Responsive: mobile overlay sidebar */
+@media (max-width: 860px) {
+  .app-sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 50; transform: translateX(-110%); transition: transform var(--transition); }
+  .app-sidebar.open { transform: translateX(0%); box-shadow: 0 8px 20px rgba(0,0,0,0.18); }
+  .app-main { padding-top: 64px; }
+  #sidebar-toggle { display: inline-flex; }
+}

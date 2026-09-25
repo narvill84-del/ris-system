@@ -1,7 +1,7 @@
 <?php
 /**
  * Index File - Entry Point
- * RIS Form System - Margosatubig, Zamboanga del Sur LGU
+ * RIS System - Margosatubig, Zamboanga del Sur LGU
  */
 
 // Include database config

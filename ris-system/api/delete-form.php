@@ -1,53 +1,36 @@
 <?php
-/**
- * API - Delete RIS Form
- * RIS Form System - Margosatubig, Zamboanga del Sur LGU
- */
-
 require_once '../config/database.php';
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
-$response = ['success' => false, 'message' => 'An error occurred'];
-
-try {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new Exception('Invalid request method');
-    }
-
-    $input = json_decode(file_get_contents('php://input'), true);
-    $ris_id = (int)($input['id'] ?? 0);
-
-    if ($ris_id <= 0) {
-        throw new Exception('Invalid RIS ID');
-    }
-
-    // Delete line items
-    $delete_items = "DELETE FROM ris_line_items WHERE ris_id = ?";
-    $stmt1 = $conn->prepare($delete_items);
-    $stmt1->bind_param("i", $ris_id);
-    $stmt1->execute();
-
-    // Delete form
-    $delete_form = "DELETE FROM ris_forms WHERE id = ?";
-    $stmt2 = $conn->prepare($delete_form);
-    $stmt2->bind_param("i", $ris_id);
-
-    if (!$stmt2->execute()) {
-        throw new Exception("Error deleting form: " . $stmt2->error);
-    }
-
-    // Log audit
-    $user_id = $_SESSION['user_id'] ?? 1;
-    log_audit($user_id, $ris_id, 'DELETE', 'Form deleted');
-
-    $response = [
-        'success' => true,
-        'message' => 'Form deleted successfully'
-    ];
-
-} catch (Exception $e) {
-    $response['message'] = $e->getMessage();
+function delete_json(array $data, int $status = 200): never
+{
+    http_response_code($status);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
 }
 
-echo json_encode($response);
-?>
+try {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') delete_json(['success'=>false,'message'=>'POST is required.'], 405);
+    $input = json_decode(file_get_contents('php://input'), true);
+    $ris_id = (int) ($input['id'] ?? $_POST['id'] ?? 0);
+    if ($ris_id < 1) throw new RuntimeException('Invalid RIS ID.');
+
+    $conn->begin_transaction();
+    $check = $conn->prepare('SELECT id FROM ris_forms WHERE id = ? FOR UPDATE');
+    $check->bind_param('i', $ris_id); $check->execute(); $check->store_result();
+    if ($check->num_rows !== 1) throw new RuntimeException('RIS form not found.');
+    $check->close();
+
+    // Delete children explicitly so this works with both old and migrated schemas.
+    $items = $conn->prepare('DELETE FROM ris_line_items WHERE ris_id = ?');
+    $items->bind_param('i', $ris_id); $items->execute(); $deleted_items = $items->affected_rows; $items->close();
+    $form = $conn->prepare('DELETE FROM ris_forms WHERE id = ?');
+    $form->bind_param('i', $ris_id); $form->execute(); $deleted_forms = $form->affected_rows; $form->close();
+    if ($deleted_forms !== 1) throw new RuntimeException('The RIS form could not be deleted.');
+    $conn->commit();
+    delete_json(['success'=>true,'message'=>'Form deleted successfully.','deleted_items'=>$deleted_items,'deleted_forms'=>$deleted_forms]);
+} catch (Throwable $exception) {
+    if (isset($conn)) { try { $conn->rollback(); } catch (Throwable $ignored) {} }
+    error_log('Delete RIS form error: ' . $exception->getMessage());
+    delete_json(['success'=>false,'message'=>$exception->getMessage()], 400);
+}

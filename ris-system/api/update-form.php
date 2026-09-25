@@ -1,117 +1,94 @@
 <?php
-/**
- * API - Update RIS Form
- * RIS Form System - Margosatubig, Zamboanga del Sur LGU
- */
-
 require_once '../config/database.php';
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
-$response = ['success' => false, 'message' => 'An error occurred'];
-
-try {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new Exception('Invalid request method');
-    }
-
-    $ris_id = (int)($_POST['id'] ?? 0);
-    if ($ris_id <= 0) {
-        throw new Exception('Invalid RIS ID');
-    }
-
-    // Get form data
-    $office_name = sanitize_input($_POST['office_name'] ?? '');
-    $responsibility_center_code = sanitize_input($_POST['responsibility_center_code'] ?? '');
-    $ris_date = sanitize_input($_POST['ris_date'] ?? '');
-    $sai_number = sanitize_input($_POST['sai_number'] ?? '');
-    $sai_date = sanitize_input($_POST['sai_date'] ?? '');
-    $purpose = sanitize_input($_POST['purpose'] ?? '');
-    $requested_by = sanitize_input($_POST['requested_by'] ?? '');
-    $requested_by_designation = sanitize_input($_POST['requested_by_designation'] ?? '');
-    $requested_by_date = sanitize_input($_POST['requested_by_date'] ?? '');
-    $approved_by = sanitize_input($_POST['approved_by'] ?? '');
-    $approved_by_designation = sanitize_input($_POST['approved_by_designation'] ?? '');
-    $approved_by_date = sanitize_input($_POST['approved_by_date'] ?? '');
-    $received_by = sanitize_input($_POST['received_by'] ?? '');
-    $received_by_designation = sanitize_input($_POST['received_by_designation'] ?? '');
-    $received_by_date = sanitize_input($_POST['received_by_date'] ?? '');
-
-    // Update RIS Form
-    $query = "UPDATE ris_forms SET
-        office_name = ?, responsibility_center_code = ?, ris_date = ?, sai_number = ?, sai_date = ?,
-        purpose = ?, requested_by = ?, requested_by_designation = ?, requested_by_date = ?,
-        approved_by = ?, approved_by_designation = ?, approved_by_date = ?,
-        received_by = ?, received_by_designation = ?, received_by_date = ?
-        WHERE id = ?";
-
-    $stmt = $conn->prepare($query);
-    if (!$stmt) {
-        throw new Exception("Database error: " . $conn->error);
-    }
-
-    $stmt->bind_param(
-        "sssssssssssssssi",
-        $office_name, $responsibility_center_code, $ris_date, $sai_number, $sai_date,
-        $purpose, $requested_by, $requested_by_designation, $requested_by_date,
-        $approved_by, $approved_by_designation, $approved_by_date,
-        $received_by, $received_by_designation, $received_by_date, $ris_id
-    );
-
-    if (!$stmt->execute()) {
-        throw new Exception("Error updating form: " . $stmt->error);
-    }
-
-    // Delete old line items
-    $delete_query = "DELETE FROM ris_line_items WHERE ris_id = ?";
-    $delete_stmt = $conn->prepare($delete_query);
-    $delete_stmt->bind_param("i", $ris_id);
-    $delete_stmt->execute();
-
-    // Insert new line items
-    $line_items = json_decode($_POST['line_items'] ?? '[]', true);
-    if (!empty($line_items)) {
-        $item_query = "INSERT INTO ris_line_items (
-            ris_id, stock_number, unit, description, quantity_requested, quantity_received, remarks
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        $item_stmt = $conn->prepare($item_query);
-        if (!$item_stmt) {
-            throw new Exception("Database error: " . $conn->error);
-        }
-
-        foreach ($line_items as $item) {
-            $stock_number = $item['stock_number'] ?? '';
-            $unit = $item['unit'] ?? '';
-            $description = $item['description'] ?? '';
-            $quantity_requested = (int)($item['quantity_requested'] ?? 0);
-            $quantity_received = (int)($item['quantity_received'] ?? 0);
-            $remarks = $item['remarks'] ?? '';
-
-            $item_stmt->bind_param(
-                "ississs",
-                $ris_id, $stock_number, $unit, $description, $quantity_requested, $quantity_received, $remarks
-            );
-
-            if (!$item_stmt->execute()) {
-                throw new Exception("Error inserting line item: " . $item_stmt->error);
-            }
-        }
-        $item_stmt->close();
-    }
-
-    // Log audit
-    $user_id = $_SESSION['user_id'] ?? 1;
-    log_audit($user_id, $ris_id, 'UPDATE', 'Form updated');
-
-    $response = [
-        'success' => true,
-        'message' => 'Form updated successfully',
-        'ris_id' => $ris_id
-    ];
-
-} catch (Exception $e) {
-    $response['message'] = $e->getMessage();
+function update_json(array $data, int $status = 200): never
+{
+    http_response_code($status);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
 }
 
-echo json_encode($response);
-?>
+function update_date(?string $value, bool $required = false): bool
+{
+    if ($value === null || $value === '') return !$required;
+    $date = DateTime::createFromFormat('!Y-m-d', $value);
+    return $date !== false && $date->format('Y-m-d') === $value;
+}
+
+try {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') update_json(['success'=>false,'message'=>'POST is required.'], 405);
+    $ris_id = (int) ($_POST['id'] ?? 0);
+    if ($ris_id < 1) throw new RuntimeException('Invalid RIS ID.');
+
+    $value = static fn(string $key): string => trim((string) ($_POST[$key] ?? ''));
+    $nullable = static function (string $key) use ($value): ?string {
+        $v = $value($key); return $v === '' ? null : $v;
+    };
+
+    $office = $value('office_name');
+    $center = $nullable('responsibility_center_code');
+    $ris_date = $value('ris_date');
+    $sai_number = $nullable('sai_number');
+    $sai_date = $nullable('sai_date');
+    $purpose = $value('purpose');
+    $requested_by = $value('requested_by');
+    $requested_sig = $nullable('requested_by_signature');
+    $requested_designation = $value('requested_by_designation');
+    $requested_date = $value('requested_by_date');
+    $approved_by = $value('approved_by');
+    $approved_sig = $nullable('approved_by_signature');
+    $approved_designation = $value('approved_by_designation');
+    $approved_date = $value('approved_by_date');
+    $received_by = $nullable('received_by');
+    $received_sig = $nullable('received_by_signature');
+    $received_designation = $nullable('received_by_designation');
+    $received_date = $nullable('received_by_date');
+
+    foreach (['Office'=>$office,'RIS date'=>$ris_date,'Purpose'=>$purpose,'Requested by'=>$requested_by,'Requested-by designation'=>$requested_designation,'Requested-by date'=>$requested_date,'Approved by'=>$approved_by,'Approved-by designation'=>$approved_designation,'Approved-by date'=>$approved_date] as $name=>$field) {
+        if ($field === '') throw new RuntimeException($name . ' is required.');
+    }
+    foreach ([$ris_date, $requested_date, $approved_date] as $date) if (!update_date($date, true)) throw new RuntimeException('A required date is invalid.');
+    foreach ([$sai_date, $received_date] as $date) if (!update_date($date)) throw new RuntimeException('An optional date is invalid.');
+
+    $raw = $_POST['line_items'] ?? '';
+    $items = is_array($raw) ? $raw : json_decode((string) $raw, true);
+    if (!is_array($items)) throw new RuntimeException('Line-item data is invalid.');
+    $valid_items = [];
+    foreach ($items as $index=>$item) {
+        if (!is_array($item)) continue;
+        $description = trim((string) ($item['descriptions'] ?? $item['description'] ?? ''));
+        $requested = filter_var($item['quantity_requested'] ?? null, FILTER_VALIDATE_INT);
+        $received = filter_var($item['quantity_received'] ?? 0, FILTER_VALIDATE_INT);
+        if ($description === '' && ($item['quantity_requested'] ?? '') === '') continue;
+        if ($description === '' || $requested === false || $requested < 1) throw new RuntimeException('Invalid line item ' . ((int)$index + 1) . '.');
+        if ($received === false || $received < 0 || $received > $requested) throw new RuntimeException('Invalid received quantity for line item ' . ((int)$index + 1) . '.');
+        $valid_items[] = [trim((string)($item['stock_number'] ?? '')),trim((string)($item['unit'] ?? '')),$description,(int)$requested,(int)$received,trim((string)($item['remarks'] ?? ''))];
+    }
+    if (!$valid_items) throw new RuntimeException('Please add at least one valid line item.');
+
+    $conn->begin_transaction();
+    $exists = $conn->prepare('SELECT id FROM ris_forms WHERE id = ? FOR UPDATE');
+    $exists->bind_param('i', $ris_id); $exists->execute(); $exists->store_result();
+    if ($exists->num_rows !== 1) throw new RuntimeException('RIS form not found.');
+    $exists->close();
+
+    $stmt = $conn->prepare('UPDATE ris_forms SET sai_number=?,office_name=?,responsibility_center_code=?,ris_date=?,sai_date=?,purpose=?,requested_by=?,requested_by_signature=?,requested_by_designation=?,requested_by_date=?,approved_by=?,approved_by_signature=?,approved_by_designation=?,approved_by_date=?,received_by=?,received_by_signature=?,received_by_designation=?,received_by_date=? WHERE id=?');
+    $stmt->bind_param('ssssssssssssssssssi',$sai_number,$office,$center,$ris_date,$sai_date,$purpose,$requested_by,$requested_sig,$requested_designation,$requested_date,$approved_by,$approved_sig,$approved_designation,$approved_date,$received_by,$received_sig,$received_designation,$received_date,$ris_id);
+    $stmt->execute(); $stmt->close();
+
+    $delete = $conn->prepare('DELETE FROM ris_line_items WHERE ris_id = ?');
+    $delete->bind_param('i', $ris_id); $delete->execute(); $delete->close();
+    $item_stmt = $conn->prepare('INSERT INTO ris_line_items (ris_id,stock_number,unit,descriptions,quantity_requested,quantity_received,remarks) VALUES (?,?,?,?,?,?,?)');
+    foreach ($valid_items as [$stock,$unit,$description,$requested_qty,$received_qty,$remarks]) {
+        $item_stmt->bind_param('isssiis',$ris_id,$stock,$unit,$description,$requested_qty,$received_qty,$remarks); $item_stmt->execute();
+    }
+    $item_stmt->close();
+    log_audit((int)($_SESSION['user_id'] ?? 1), $ris_id, 'UPDATE', 'Form updated');
+    $conn->commit();
+    update_json(['success'=>true,'message'=>'Form updated successfully.','ris_id'=>$ris_id]);
+} catch (Throwable $exception) {
+    if (isset($conn)) { try { $conn->rollback(); } catch (Throwable $ignored) {} }
+    error_log('Update RIS form error: ' . $exception->getMessage());
+    update_json(['success'=>false,'message'=>$exception->getMessage()], 400);
+}

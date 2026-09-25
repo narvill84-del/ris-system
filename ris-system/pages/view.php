@@ -96,7 +96,7 @@ $items_result = $items_stmt->get_result();
                     <tr>
                         <td><?php echo htmlspecialchars($item['stock_number'] ?? ''); ?></td>
                         <td><?php echo htmlspecialchars($item['unit'] ?? ''); ?></td>
-                        <td><?php echo htmlspecialchars($item['description'] ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($item['descriptions'] ?? ''); ?></td>
                         <td><?php echo $item['quantity_requested']; ?></td>
                         <td><?php echo $item['quantity_received']; ?></td>
                         <td><?php echo htmlspecialchars($item['remarks'] ?? ''); ?></td>

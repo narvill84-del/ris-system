@@ -87,7 +87,7 @@ $result = $conn->query($query);
             <p style="margin: 0.1rem 0;">Province of Zamboanga del Sur</p>
             <p style="margin: 0.1rem 0;"><strong>MUNICIPALITY OF MARGOSATUBIG</strong></p>
             <p style="margin: 0.1rem 0;">Margosatubig, Zamboanga del Sur</p>
-            <h2 style="margin: 0;">REQUISITION AND ISSUE SLIP REPORT</h2>
+            <h2 style="margin: 0;">REQUISITION AND ISSUE SLIP</h2>
             <p style="margin: 0.5rem 0; font-size: 0.9rem;">
                 Report Generated: <?php echo date('F d, Y H:i:s'); ?>
             </p>
@@ -136,7 +136,7 @@ $result = $conn->query($query);
                 <tr>
                     <td><?php echo htmlspecialchars($row['ris_number']); ?></td>
                     <td><?php echo htmlspecialchars($row['requested_by'] ?? 'N/A'); ?></td>
-                    <td><?php echo htmlspecialchars($row['description'] ?? ''); ?></td>
+                    <td><?php echo htmlspecialchars($row['descriptions'] ?? ''); ?></td>
                     <td><?php echo htmlspecialchars($row['stock_number'] ?? ''); ?></td>
                     <td></td>
                     <td><?php echo date('m/d/Y', strtotime($row['ris_date'])); ?></td>

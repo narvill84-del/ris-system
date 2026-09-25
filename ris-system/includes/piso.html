@@ -1,0 +1,81 @@
+<style>
+.how-to-card {
+    max-width: 500px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,.12);
+    overflow: hidden;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.how-to-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: #fff;
+    padding: 15px 20px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.how-to-body {
+    padding: 20px;
+}
+
+.how-to-body ol {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+    counter-reset: step;
+}
+
+.how-to-body li {
+    counter-increment: step;
+    position: relative;
+    padding: 14px 14px 14px 55px;
+    margin-bottom: 12px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    font-size: 1rem;
+    border-left: 4px solid #007bff;
+}
+
+.how-to-body li::before {
+    content: counter(step);
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.how-to-body b {
+    color: #007bff;
+}
+</style>
+
+<div class="how-to-card">
+
+    <div class="how-to-header">
+        <i class="fa fa-question-circle"></i>
+        HOW TO USE
+    </div>
+
+    <div class="how-to-body">
+        <ol>
+            <li>Press <b>INSERT COIN</b>.</li>
+            <li>Maghulog ng barya.</li>
+            <li>Press <b>DONE PAYING</b>. Enjoy!</li>
+        </ol>
+    </div>
+
+</div>

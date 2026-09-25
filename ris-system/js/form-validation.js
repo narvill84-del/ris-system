@@ -1,311 +1,554 @@
 /**
- * Form Validation & Helper Functions
- * RIS Form System - Margosatubig, Zamboanga del Sur LGU
+ * RIS Form System - Form Validation
+ * Margosatubig, Zamboanga del Sur LGU
  */
 
-// Validate Required Field
-function validateRequired(fieldId, fieldName) {
-    const field = document.getElementById(fieldId);
-    if (!field || field.value.trim() === '') {
-        showError(fieldId, `${fieldName} is required`);
-        return false;
-    }
-    clearError(fieldId);
-    return true;
-}
+(function () {
+    'use strict';
 
-// Validate Email
-function validateEmail(fieldId, fieldName) {
-    const field = document.getElementById(fieldId);
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
-    if (!field || field.value.trim() === '') {
-        showError(fieldId, `${fieldName} is required`);
-        return false;
+    function getField(fieldId) {
+        return document.getElementById(fieldId);
     }
-    
-    if (!emailRegex.test(field.value)) {
-        showError(fieldId, `${fieldName} must be a valid email`);
-        return false;
-    }
-    
-    clearError(fieldId);
-    return true;
-}
 
-// Validate Number
-function validateNumber(fieldId, fieldName) {
-    const field = document.getElementById(fieldId);
-    const numberRegex = /^\d+$/;
-    
-    if (!field || field.value.trim() === '') {
-        showError(fieldId, `${fieldName} is required`);
-        return false;
-    }
-    
-    if (!numberRegex.test(field.value)) {
-        showError(fieldId, `${fieldName} must be a number`);
-        return false;
-    }
-    
-    clearError(fieldId);
-    return true;
-}
+    function getValue(fieldId) {
+        const field = getField(fieldId);
 
-// Validate Date
-function validateDate(fieldId, fieldName) {
-    const field = document.getElementById(fieldId);
-    if (!field || field.value.trim() === '') {
-        showError(fieldId, `${fieldName} is required`);
-        return false;
+        return field
+            ? String(field.value || '').trim()
+            : '';
     }
-    
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(field.value)) {
-        showError(fieldId, `${fieldName} must be a valid date (YYYY-MM-DD)`);
-        return false;
-    }
-    
-    clearError(fieldId);
-    return true;
-}
 
-// Validate Min Length
-function validateMinLength(fieldId, fieldName, minLength) {
-    const field = document.getElementById(fieldId);
-    if (!field || field.value.trim().length < minLength) {
-        showError(fieldId, `${fieldName} must be at least ${minLength} characters`);
-        return false;
+    function errorId(fieldId) {
+        return `${fieldId}-error`;
     }
-    clearError(fieldId);
-    return true;
-}
 
-// Validate Max Length
-function validateMaxLength(fieldId, fieldName, maxLength) {
-    const field = document.getElementById(fieldId);
-    if (!field || field.value.trim().length > maxLength) {
-        showError(fieldId, `${fieldName} must not exceed ${maxLength} characters`);
-        return false;
-    }
-    clearError(fieldId);
-    return true;
-}
+    function showFieldError(fieldId, message) {
+        const field = getField(fieldId);
 
-// Show Error Message
-function showError(fieldId, message) {
-    const field = document.getElementById(fieldId);
-    const errorId = `${fieldId}-error`;
-    
-    // Remove existing error if present
-    const existingError = document.getElementById(errorId);
-    if (existingError) {
-        existingError.remove();
-    }
-    
-    if (field) {
+        if (!field) {
+            return;
+        }
+
+        clearFieldError(fieldId);
+
         field.classList.add('is-invalid');
-        const errorDiv = document.createElement('small');
-        errorDiv.id = errorId;
-        errorDiv.className = 'text-danger d-block mt-1';
-        errorDiv.textContent = message;
-        field.parentNode.appendChild(errorDiv);
-    }
-}
+        field.setAttribute('aria-invalid', 'true');
 
-// Clear Error Message
-function clearError(fieldId) {
-    const field = document.getElementById(fieldId);
-    const errorId = `${fieldId}-error`;
-    const existingError = document.getElementById(errorId);
-    
-    if (field) {
-        field.classList.remove('is-invalid');
-    }
-    
-    if (existingError) {
-        existingError.remove();
-    }
-}
+        const error = document.createElement('small');
 
-// Clear All Errors
-function clearAllErrors() {
-    const errorElements = document.querySelectorAll('[id$="-error"]');
-    errorElements.forEach(el => el.remove());
-    
-    const invalidFields = document.querySelectorAll('.is-invalid');
-    invalidFields.forEach(field => field.classList.remove('is-invalid'));
-}
+        error.id = errorId(fieldId);
+        error.className = 'validation-error';
+        error.setAttribute('role', 'alert');
+        error.textContent = message;
 
-// Validate RIS Form
-function validateRISForm() {
-    clearAllErrors();
-    let isValid = true;
-
-    // Validate Office Name
-    if (!validateRequired('office_name', 'Office Name')) {
-        isValid = false;
+        if (field.parentElement) {
+            field.parentElement.appendChild(error);
+        }
     }
 
-    // Validate RIS Number
-    if (!validateRequired('ris_number', 'RIS Number')) {
-        isValid = false;
+    function clearFieldError(fieldId) {
+        const field = getField(fieldId);
+        const error = document.getElementById(
+            errorId(fieldId)
+        );
+
+        if (field) {
+            field.classList.remove('is-invalid');
+            field.removeAttribute('aria-invalid');
+        }
+
+        if (error) {
+            error.remove();
+        }
     }
 
-    // Validate RIS Date
-    if (!validateDate('ris_date', 'RIS Date')) {
-        isValid = false;
+    function clearAllErrors() {
+        document
+            .querySelectorAll('.validation-error')
+            .forEach(error => error.remove());
+
+        document
+            .querySelectorAll('.is-invalid')
+            .forEach(field => {
+                field.classList.remove('is-invalid');
+                field.removeAttribute('aria-invalid');
+            });
     }
 
-    // Validate Purpose
-    if (!validateRequired('purpose', 'Purpose')) {
-        isValid = false;
+    function validDate(value) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            return false;
+        }
+
+        const parts = value.split('-').map(Number);
+        const date = new Date(
+            parts[0],
+            parts[1] - 1,
+            parts[2]
+        );
+
+        return (
+            date.getFullYear() === parts[0] &&
+            date.getMonth() === parts[1] - 1 &&
+            date.getDate() === parts[2]
+        );
     }
 
-    // Validate Requested By
-    if (!validateRequired('requested_by', 'Requested By')) {
-        isValid = false;
+    function validateRequired(fieldId, fieldName) {
+        const value = getValue(fieldId);
+
+        if (value === '') {
+            showFieldError(
+                fieldId,
+                `${fieldName} is required.`
+            );
+
+            return false;
+        }
+
+        clearFieldError(fieldId);
+        return true;
     }
 
-    // Validate Requested By Designation
-    if (!validateRequired('requested_by_designation', 'Requested By Designation')) {
-        isValid = false;
+    function validateDate(fieldId, fieldName) {
+        const value = getValue(fieldId);
+
+        if (value === '') {
+            showFieldError(
+                fieldId,
+                `${fieldName} is required.`
+            );
+
+            return false;
+        }
+
+        if (!validDate(value)) {
+            showFieldError(
+                fieldId,
+                `${fieldName} is invalid.`
+            );
+
+            return false;
+        }
+
+        clearFieldError(fieldId);
+        return true;
     }
 
-    // Validate Approved By
-    if (!validateRequired('approved_by', 'Approved By')) {
-        isValid = false;
+    function validateOptionalDate(fieldId, fieldName) {
+        const value = getValue(fieldId);
+
+        if (value === '') {
+            clearFieldError(fieldId);
+            return true;
+        }
+
+        return validateDate(fieldId, fieldName);
     }
 
-    // Validate Approved By Designation
-    if (!validateRequired('approved_by_designation', 'Approved By Designation')) {
-        isValid = false;
-    }
+    function validateLineItems() {
+        const tbody = document.getElementById(
+            'line-items-body'
+        );
 
-    // Validate at least one line item
-    const lineItems = document.querySelectorAll('table tbody tr');
-    if (lineItems.length === 0) {
-        showAlert('Please add at least one item', 'danger');
-        isValid = false;
-    }
+        if (!tbody) {
+            return false;
+        }
 
-    return isValid;
-}
+        const rows = Array.from(
+            tbody.querySelectorAll('tr')
+        );
 
-// Show Alert Message
-function showAlert(message, type = 'info') {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.role = 'alert';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
-    
-    const container = document.querySelector('.container') || document.body;
-    container.insertBefore(alertDiv, container.firstChild);
-    
-    // Auto-dismiss after 5 seconds
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
-}
+        if (rows.length === 0) {
+            showAlert(
+                'Please add at least one line item.',
+                'danger'
+            );
 
-// Format Currency
-function formatCurrency(value) {
-    const numValue = parseFloat(value);
-    if (isNaN(numValue)) return '0.00';
-    return numValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
+            return false;
+        }
 
-// Format Date
-function formatDate(dateString) {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', options);
-}
+        let validItems = 0;
+        let valid = true;
 
-// Get URL Parameters
-function getUrlParameter(name) {
-    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-    const regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-    const results = regex.exec(location.search);
-    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-}
+        rows.forEach((row, index) => {
+            const itemNumber = index + 1;
 
-// Copy to Clipboard
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showAlert('Copied to clipboard!', 'success');
-    }).catch(() => {
-        showAlert('Failed to copy', 'danger');
-    });
-}
+            const description = row.querySelector(
+                '[name^="description_"]'
+            );
 
-// Print Page
-function printPage() {
-    window.print();
-}
+            const requested = row.querySelector(
+                '[name^="quantity_requested_"]'
+            );
 
-// Export to CSV
-function exportTableToCSV(filename) {
-    const table = document.querySelector('table');
-    if (!table) {
-        showAlert('No table found to export', 'danger');
-        return;
-    }
+            const received = row.querySelector(
+                '[name^="quantity_received_"]'
+            );
 
-    let csv = [];
-    const rows = table.querySelectorAll('tr');
-    
-    rows.forEach(row => {
-        let rowData = [];
-        const cols = row.querySelectorAll('td, th');
-        
-        cols.forEach(col => {
-            rowData.push('"' + col.innerText.replace(/"/g, '""') + '"');
-        });
-        
-        csv.push(rowData.join(','));
-    });
+            const descriptionValue = description
+                ? description.value.trim()
+                : '';
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv.join('\n'));
-    const link = document.createElement('a');
-    link.setAttribute('href', csvContent);
-    link.setAttribute('download', filename || 'export.csv');
-    link.click();
-}
+            const requestedValue = requested
+                ? requested.value.trim()
+                : '';
 
-// Export to PDF (requires external library)
-function exportToPDF(filename) {
-    showAlert('PDF export feature requires configuration', 'info');
-}
+            const receivedValue = received
+                ? received.value.trim()
+                : '';
 
-// Add Event Listeners for Real-time Validation
-document.addEventListener('DOMContentLoaded', function() {
-    const formInputs = document.querySelectorAll('input, textarea, select');
-    
-    formInputs.forEach(input => {
-        input.addEventListener('blur', function() {
-            if (this.hasAttribute('data-validate')) {
-                const validateType = this.getAttribute('data-validate');
-                const fieldName = this.getAttribute('data-field-name') || this.name;
-                
-                switch(validateType) {
-                    case 'required':
-                        validateRequired(this.id, fieldName);
-                        break;
-                    case 'email':
-                        validateEmail(this.id, fieldName);
-                        break;
-                    case 'number':
-                        validateNumber(this.id, fieldName);
-                        break;
-                    case 'date':
-                        validateDate(this.id, fieldName);
-                        break;
+            const rowIsEmpty =
+                descriptionValue === '' &&
+                requestedValue === '' &&
+                receivedValue === '';
+
+            if (rowIsEmpty) {
+                return;
+            }
+
+            validItems++;
+
+            if (descriptionValue === '') {
+                valid = false;
+
+                if (description) {
+                    markInvalid(
+                        description,
+                        `Description is required for line item ${itemNumber}.`
+                    );
+                }
+            }
+
+            const requestedNumber = Number(
+                requestedValue
+            );
+
+            const receivedNumber = receivedValue === ''
+                ? 0
+                : Number(receivedValue);
+
+            if (
+                !Number.isInteger(requestedNumber) ||
+                requestedNumber < 1
+            ) {
+                valid = false;
+
+                if (requested) {
+                    markInvalid(
+                        requested,
+                        `Quantity requested must be at least 1 for line item ${itemNumber}.`
+                    );
+                }
+            }
+
+            if (
+                !Number.isInteger(receivedNumber) ||
+                receivedNumber < 0
+            ) {
+                valid = false;
+
+                if (received) {
+                    markInvalid(
+                        received,
+                        `Quantity received is invalid for line item ${itemNumber}.`
+                    );
+                }
+            }
+
+            if (
+                receivedNumber > requestedNumber
+            ) {
+                valid = false;
+
+                if (received) {
+                    markInvalid(
+                        received,
+                        `Quantity received cannot exceed requested quantity for line item ${itemNumber}.`
+                    );
                 }
             }
         });
-    });
-});
+
+        if (validItems === 0) {
+            showAlert(
+                'Please add at least one valid line item.',
+                'danger'
+            );
+
+            return false;
+        }
+
+        return valid;
+    }
+
+    function markInvalid(field, message) {
+        field.classList.add('is-invalid');
+        field.setAttribute('aria-invalid', 'true');
+
+        const oldError =
+            field.parentElement.querySelector(
+                '.validation-error'
+            );
+
+        if (oldError) {
+            oldError.remove();
+        }
+
+        const error = document.createElement('small');
+
+        error.className = 'validation-error';
+        error.setAttribute('role', 'alert');
+        error.textContent = message;
+
+        field.parentElement.appendChild(error);
+    }
+
+    window.validateRISForm = function () {
+        clearAllErrors();
+
+        let valid = true;
+
+        const requiredFields = [
+            ['office_name', 'Office'],
+            ['ris_date', 'RIS Date'],
+            ['purpose', 'Purpose'],
+            ['requested_by', 'Requested by'],
+            [
+                'requested_by_designation',
+                'Requested-by designation'
+            ],
+            [
+                'requested_by_date',
+                'Requested-by date'
+            ],
+            ['approved_by', 'Approved by'],
+            [
+                'approved_by_designation',
+                'Approved-by designation'
+            ],
+            [
+                'approved_by_date',
+                'Approved-by date'
+            ]
+        ];
+
+        requiredFields.forEach(
+            ([fieldId, fieldName]) => {
+                if (
+                    !validateRequired(
+                        fieldId,
+                        fieldName
+                    )
+                ) {
+                    valid = false;
+                }
+            }
+        );
+
+        if (
+            getValue('ris_date') !== '' &&
+            !validateDate('ris_date', 'RIS Date')
+        ) {
+            valid = false;
+        }
+
+        if (
+            getValue('requested_by_date') !== '' &&
+            !validateDate(
+                'requested_by_date',
+                'Requested-by date'
+            )
+        ) {
+            valid = false;
+        }
+
+        if (
+            getValue('approved_by_date') !== '' &&
+            !validateDate(
+                'approved_by_date',
+                'Approved-by date'
+            )
+        ) {
+            valid = false;
+        }
+
+        if (
+            getValue('sai_date') !== '' &&
+            !validateOptionalDate(
+                'sai_date',
+                'SAI date'
+            )
+        ) {
+            valid = false;
+        }
+
+        if (
+            getValue('received_by_date') !== '' &&
+            !validateOptionalDate(
+                'received_by_date',
+                'Received-by date'
+            )
+        ) {
+            valid = false;
+        }
+
+        if (!validateLineItems()) {
+            valid = false;
+        }
+
+        if (!valid) {
+            showAlert(
+                'Please correct the highlighted fields.',
+                'danger'
+            );
+        }
+
+        return valid;
+    };
+
+    window.showAlert = function (
+        message,
+        type = 'info'
+    ) {
+        const existing = document.querySelector(
+            '.ris-alert'
+        );
+
+        if (existing) {
+            existing.remove();
+        }
+
+        const alert = document.createElement('div');
+
+        alert.className = `ris-alert ris-alert-${type}`;
+        alert.setAttribute('role', 'alert');
+        alert.textContent = message;
+
+        const container =
+            document.querySelector('.create-card-body') ||
+            document.body;
+
+        container.insertBefore(
+            alert,
+            container.firstChild
+        );
+
+        window.setTimeout(() => {
+            if (alert.isConnected) {
+                alert.remove();
+            }
+        }, 5000);
+    };
+
+    function addValidationStyles() {
+        if (
+            document.getElementById(
+                'ris-validation-styles'
+            )
+        ) {
+            return;
+        }
+
+        const style = document.createElement('style');
+
+        style.id = 'ris-validation-styles';
+
+        style.textContent = `
+            .validation-error {
+                display: block;
+                margin-top: 5px;
+                color: #f18b8b;
+                font-size: 0.78rem;
+                line-height: 1.4;
+            }
+
+            .is-invalid {
+                border-color: #e36b6b !important;
+                box-shadow:
+                    0 0 0 3px
+                    rgba(227, 107, 107, 0.14) !important;
+            }
+
+            .ris-alert {
+                width: 100%;
+                margin-bottom: 18px;
+                padding: 13px 16px;
+                border-radius: 10px;
+                font-size: 0.9rem;
+                font-weight: 600;
+            }
+
+            .ris-alert-info {
+                color: #bae6fd;
+                background: rgba(56, 189, 248, 0.1);
+                border: 1px solid rgba(56, 189, 248, 0.25);
+            }
+
+            .ris-alert-success {
+                color: #b7efc5;
+                background: rgba(95, 207, 128, 0.1);
+                border: 1px solid rgba(95, 207, 128, 0.25);
+            }
+
+            .ris-alert-danger {
+                color: #ffc1c1;
+                background: rgba(227, 107, 107, 0.1);
+                border: 1px solid rgba(227, 107, 107, 0.3);
+            }
+
+            .ris-alert-warning {
+                color: #f8df93;
+                background: rgba(228, 184, 76, 0.1);
+                border: 1px solid rgba(228, 184, 76, 0.3);
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        () => {
+            addValidationStyles();
+
+            document
+                .querySelectorAll('[data-validate]')
+                .forEach(field => {
+                    field.addEventListener(
+                        'blur',
+                        () => {
+                            const type =
+                                field.dataset.validate;
+
+                            const name =
+                                field.dataset.fieldName ||
+                                field.name ||
+                                field.id;
+
+                            if (type === 'required') {
+                                validateRequired(
+                                    field.id,
+                                    name
+                                );
+                            }
+
+                            if (type === 'date') {
+                                validateDate(
+                                    field.id,
+                                    name
+                                );
+                            }
+                        }
+                    );
+
+                    field.addEventListener(
+                        'input',
+                        () => {
+                            clearFieldError(field.id);
+                        }
+                    );
+                });
+        }
+    );
+})();

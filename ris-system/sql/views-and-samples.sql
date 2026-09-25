@@ -16,9 +16,28 @@ LEFT JOIN ris_line_items rli ON rf.id = rli.ris_id
 GROUP BY rf.id, rf.ris_number, rf.office_name, rf.ris_date, rf.status;
 
 -- Sample Data (Optional)
--- INSERT INTO ris_forms (ris_number, office_name, responsibility_center_code, ris_date, purpose, requested_by, requested_by_designation, requested_by_date, approved_by, approved_by_designation, approved_by_date, created_by, status)
--- VALUES ('RIS-2026-06-00001', 'Office of the Mayor', 'OM-001', '2026-06-01', 'Office supplies and materials', 'John Doe', 'Secretary', '2026-06-01', 'Jane Smith', 'Mayor', '2026-06-01', 1, 'DRAFT');
+INSERT INTO ris_forms (ris_number, office_name, responsibility_center_code, ris_date, purpose, requested_by, requested_by_designation, requested_by_date, approved_by, approved_by_designation, approved_by_date, created_by, status)
+VALUES ('RIS-2026-06-00001', 'Office of the Mayor', 'OM-001', '2026-06-01', 'Office supplies and materials', 'John Doe', 'Secretary', '2026-06-01', 'Jane Smith', 'Mayor', '2026-06-01', 1, 'DRAFT');
 
 -- Sample Line Items
--- INSERT INTO ris_line_items (ris_id, stock_number, unit, description, quantity_requested, quantity_received, remarks)
--- VALUES (1, 'STK-001', 'BOX', 'Copy Paper A4 70GSM', 10, 0, 'For general office use');
+INSERT INTO ris_line_items (ris_id, stock_number, unit, description, quantity_requested, quantity_received, remarks)
+VALUES (1, 'STK-001', 'BOX', 'Copy Paper A4 70GSM', 10, 0, 'For general office use');
+
+CREATE TABLE 'ris_forms' (
+    'ris_number'int(24) Not null, 
+    'office_name'varchar(50) default null, 
+    'responsibility_center_code' int(24) Not null, 
+    'ris_date'date NOT NULL, 
+    'purpose'varchar(150) default null,
+    'requested_by'varchar(50) default null,
+    'requested_by_designation'varchar(50) default null,
+    'requested_by_date'date NOT NULL,
+    'approved_by'varchar(50) default null,
+    'approved_by_designation'varchar(50) default null,
+    'approved_by_date'date NOT NULL,
+    'created_by'varchar(50) default null,
+    'status'varchar(50) default null
+)
+
+
+

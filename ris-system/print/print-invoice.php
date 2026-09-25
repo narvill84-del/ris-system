@@ -62,6 +62,9 @@ $approved_by = $form['approved_by'] ?? '';
 $approved_designation = $form['approved_by_designation'] ?? 'Municipal Treasurer';
 $received_by = $form['received_by'] ?? '';
 $received_designation = $form['received_by_designation'] ?? 'Receiving Officer';
+
+$checked_by = trim((string) ($_GET['checked_by'] ?? $requested_by));
+$witness_name = trim((string) ($_GET['witness_name'] ?? $approved_by));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -103,11 +106,31 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .signature-name { display: block; font-size: 8pt; font-weight: 700; text-decoration: underline; text-transform: uppercase; }
 .signature-role { display: block; margin-top: 1mm; font-size: 6.5pt; font-weight: 700; text-transform: uppercase; }
 .no-print { margin-top: 15px; text-align: center; }
+.no-print .controls { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.no-print label { display: inline-flex; flex-direction: column; font-size: 11px; font-weight: 600; text-align: left; }
+.no-print input { width: 180px; padding: 7px 10px; border: 1px solid #bbb; border-radius: 6px; }
 .no-print button { margin: 0 4px; padding: 8px 14px; cursor: pointer; }
 @media print { .no-print { display: none !important; } }
 </style>
 </head>
 <body>
+<form id="invoiceForm" method="get" class="no-print">
+    <input type="hidden" name="id" value="<?php echo (int) $ris_id; ?>">
+    <div class="controls">
+        <label>
+            Checked by
+            <input type="text" name="checked_by" value="<?php echo $h($checked_by); ?>" placeholder="Leave blank">
+        </label>
+        <label>
+            Witness
+            <input type="text" name="witness_name" value="<?php echo $h($witness_name); ?>" placeholder="Leave blank">
+        </label>
+        <button type="submit">Apply</button>
+        <button type="button" onclick="window.print()">Print Invoice</button>
+        <button type="button" onclick="window.close()">Close</button>
+    </div>
+</form>
+
 <main class="page">
     <header class="header">
         <div class="meta">General Form No.<br>(Revised September 2026)</div>
@@ -165,20 +188,18 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
     <table class="certification-table">
         <tr>
-            <td>Checked by:<br><br><strong><?php echo $h($requested_by ?: '________________'); ?></strong></td>
-            <td><strong><?php echo $h($approved_by ?: '________________'); ?></strong><br><?php echo $h($approved_designation ?: 'Municipal Treasurer'); ?></td>
+            <td>Checked by:<br><br><strong><?php echo $h($checked_by ?: '________________'); ?></strong></td>
+            <td><strong><?php echo $h($witness_name ?: '________________'); ?></strong><br><?php echo $h($approved_designation ?: 'Municipal Treasurer'); ?></td>
             <td class="total">TOTAL VALUE<br>₱ 0.00</td>
         </tr>
     </table>
 
     <table class="signatures">
         <tr>
-            <td>I hereby acknowledge receipt of the accountable forms above specified.<br><br><div class="signature-line"></div><span class="signature-name"><?php echo $h($requested_by ?: '________________'); ?></span><span class="signature-role">Witness</span></td>
-            <td>Requisition filed and received in the presence of the undersigned.<br><br><div class="signature-line"></div><span class="signature-name"><?php echo $h($approved_by ?: '________________'); ?></span><span class="signature-role"><?php echo $h($approved_designation ?: 'Municipal Treasurer'); ?></span></td>
+            <td>I hereby acknowledge receipt of the accountable forms above specified.<br><br><div class="signature-line"></div><span class="signature-name"><?php echo $h($checked_by ?: '________________'); ?></span><span class="signature-role">Witness</span></td>
+            <td>Requisition filed and received in the presence of the undersigned.<br><br><div class="signature-line"></div><span class="signature-name"><?php echo $h($witness_name ?: '________________'); ?></span><span class="signature-role"><?php echo $h($approved_designation ?: 'Municipal Treasurer'); ?></span></td>
         </tr>
     </table>
 </main>
-
-<div class="no-print"><button type="button" onclick="window.print()">Print Invoice</button><button type="button" onclick="window.close()">Close</button></div>
 </body>
 </html>

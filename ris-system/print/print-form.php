@@ -6,167 +6,370 @@
 
 require_once '../config/database.php';
 
-$ris_id = (int)($_GET['id'] ?? 0);
+$ris_id = (int) ($_GET['id'] ?? 0);
 if ($ris_id <= 0) {
     die('Invalid RIS ID');
 }
 
-// Get form data
-$query = "SELECT * FROM ris_forms WHERE id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $ris_id);
-$stmt->execute();
-$result = $stmt->get_result();
+$form_stmt = $conn->prepare('SELECT * FROM ris_forms WHERE id = ?');
+$form_stmt->bind_param('i', $ris_id);
+$form_stmt->execute();
+$form_result = $form_stmt->get_result();
 
-if ($result->num_rows === 0) {
+if ($form_result->num_rows === 0) {
     die('Form not found');
 }
 
-$form = $result->fetch_assoc();
+$form = $form_result->fetch_assoc();
+$form_stmt->close();
 
-// Get line items
-$items_query = "SELECT * FROM ris_line_items WHERE ris_id = ? ORDER BY id ASC";
-$items_stmt = $conn->prepare($items_query);
-$items_stmt->bind_param("i", $ris_id);
+$items_stmt = $conn->prepare(
+    'SELECT * FROM ris_line_items WHERE ris_id = ? ORDER BY id ASC'
+);
+$items_stmt->bind_param('i', $ris_id);
 $items_stmt->execute();
 $items_result = $items_stmt->get_result();
+
+$generated_at = date('F d, Y H:i:s');
+$office_name = $form['office_name'] ?? 'N/A';
+$responsibility_center = $form['responsibility_center_code'] ?? 'N/A';
+$ris_number = $form['ris_number'] ?? 'N/A';
+$ris_date = !empty($form['ris_date']) ? date('m/d/Y', strtotime($form['ris_date'])) : '';
+$sai_number = $form['sai_number'] ?? 'N/A';
+$sai_date = !empty($form['sai_date']) ? date('m/d/Y', strtotime($form['sai_date'])) : '';
+$purpose = $form['purpose'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RIS Form - <?php echo htmlspecialchars($form['ris_number']); ?></title>
-    <link rel="stylesheet" href="<?php echo APP_URL; ?>/css/style.css">
+    <title>RIS Form - <?php echo htmlspecialchars($ris_number); ?></title>
     <style>
-        body { margin: 0; padding: 20px; }
+        @page {
+            size: A4 portrait;
+            margin: 18mm 12mm 16mm 12mm;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #000;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 0;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 830px;
+            background: #fff;
+            padding: 0;
+        }
+
+        .top-space {
+            height: 8px;
+        }
+
+        .header-wrap {
+            text-align: center;
+            padding-top: 8px;
+        }
+
+        .seal {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 8px;
+            border-radius: 50%;
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            background: #f9f9f9;
+        }
+
+        .header-wrap p {
+            margin: 0;
+            font-size: 18px;
+            line-height: 1.3;
+        }
+
+        .header-wrap .title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 10px;
+            letter-spacing: 0.02em;
+        }
+
+        .header-wrap .generated {
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 8px;
+            color: #111;
+        }
+
+        .divider {
+            border-top: 2px solid #000;
+            margin: 14px 0 0;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            border: 2px solid #000;
+            table-layout: fixed;
+        }
+
+        .info-table td {
+            border: 1px solid #000;
+            padding: 8px 10px;
+            vertical-align: top;
+            font-size: 17px;
+            line-height: 1.4;
+            background: #fff;
+        }
+
+        .info-table td:first-child {
+            width: 50%;
+        }
+
+        .info-table td:last-child {
+            width: 50%;
+        }
+
+        .label {
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .line-items {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            border: 2px solid #000;
+            table-layout: fixed;
+        }
+
+        .line-items th,
+        .line-items td {
+            border: 1px solid #000;
+            padding: 7px 6px;
+            text-align: center;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .line-items th {
+            background: #f2f2f2;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .purpose-box {
+            width: 100%;
+            border: 2px solid #000;
+            margin-top: 12px;
+            box-sizing: border-box;
+            background: #fff;
+        }
+
+        .purpose-box .title {
+            display: block;
+            padding: 8px 10px 0;
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .purpose-box .content {
+            display: block;
+            min-height: 34px;
+            padding: 8px 10px 10px;
+            font-size: 15px;
+            line-height: 1.45;
+        }
+
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            border: 2px solid #000;
+            table-layout: fixed;
+        }
+
+        .signature-table td {
+            border: 1px solid #000;
+            padding: 8px 10px 6px;
+            text-align: center;
+            vertical-align: top;
+            font-size: 13px;
+            background: #fff;
+        }
+
+        .signature-table .sig-label {
+            display: block;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .signature-line {
+            height: 58px;
+            border-bottom: 1px solid #000;
+            margin-bottom: 8px;
+        }
+
+        .signature-name {
+            display: block;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            line-height: 1.3;
+        }
+
+        .signature-role {
+            display: block;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .signature-date {
+            display: block;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .no-print {
+            display: none;
+        }
+
         @media print {
-            body { margin: 0; padding: 0; }
-            .no-print { display: none; }
+            html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="ris-form" style="border: 2px solid #000; max-width: 850px; margin: 0 auto;">
-        <div class="ris-header">
-
-            <img src="../uploads/mto1.png" alt="MTO Image" style="width: 150px; height: auto; margin: 0.1rem 0;">
-            <p style="margin: 0.1rem 0;">Republic of the Philippines</p>
-            <p style="margin: 0.1rem 0;">Province of Zamboanga del Sur</p>
-            <p style="margin: 0.1rem 0;"><strong>MUNICIPALITY OF MARGOSATUBIG</strong></p>
-            <p style="margin: 0.1rem 0;">Margosatubig, Zamboanga del Sur</p>
-            <h1 style="margin: 0;">REQUISITION AND ISSUE SLIP REPORT</h1>
-            <p style="margin: 0.5rem 0; font-size: 0.9rem;">
-                Report Generated: <?php echo date('F d, Y H:i:s'); ?>
-            </p>
-
+    <div class="page">
+        <div class="header-wrap">
+            <div class="seal">M</div>
+            <p>Republic of the Philippines</p>
+            <p>Province of Zamboanga del Sur</p>
+            <p style="font-weight: 700; letter-spacing: 0.02em;">MUNICIPALITY OF MARGOSATUBIG</p>
+            <p style="font-size: 16px;">Margosatubig, Zamboanga del Sur</p>
+            <div class="title">REQUISITION AND ISSUE SLIP FORM</div>
+            <div class="generated">Generated: <?php echo htmlspecialchars($generated_at); ?></div>
         </div>
 
-        <!-- Form Info -->
-        <table style="width: 100%; margin: 1.5rem 0; border-collapse: collapse;">
+        <div class="divider"></div>
+
+        <table class="info-table">
             <tr>
-                <td style="width: 50%; padding: 0.5rem;">
-                    <P>OFFICE:<strong style="border-bottom: 1px solid #000;"> <?php echo htmlspecialchars($form['office_name']); ?></strong></p>
-                </td>
-                <td style="width: 50%; padding: 0.5rem;">
-                    <strong>Responsibility Center</strong>
-                    <p>Code:<strong style="border-bottom: 1px solid #000;"> <?php echo htmlspecialchars($form['responsibility_center_code'] ?? ''); ?></strong></p>
-                </td>
+                <td><span class="label">Office:</span> <?php echo htmlspecialchars($office_name); ?></td>
+                <td><span class="label">Responsibility Center:</span> <?php echo htmlspecialchars($responsibility_center); ?></td>
             </tr>
             <tr>
-                <td style="padding: 0.5rem;">
-                    <p>RIS No.: <strong style="border-bottom: 1px solid #000;"> <?php echo htmlspecialchars($form['ris_number']); ?></strong></p>
-                    <p>Date: <strong style="border-bottom: 1px solid #000;"> <?php echo date('m/d/Y', strtotime($form['ris_date'])); ?></strong></p>
+                <td>
+                    <div><span class="label">RIS No.:</span> <?php echo htmlspecialchars($ris_number); ?></div>
+                    <div><span class="label">Date:</span> <?php echo htmlspecialchars($ris_date); ?></div>
                 </td>
-                <td style="padding: 0.5rem;">
-                    <p>SAI No.:<strong style="border-bottom: 1px solid #000;"> <?php echo htmlspecialchars($form['sai_number'] ?? ''); ?></strong></p>
-                   <p> Date:  <strong style="border-bottom: 1px solid #000;"> <?php echo $form['sai_date'] ? date('m/d/Y', strtotime($form['sai_date'])) : ''; ?></strong></p>
+                <td>
+                    <div><span class="label">SAI No.:</span> <?php echo htmlspecialchars($sai_number); ?></div>
+                    <div><span class="label">Date:</span> <?php echo htmlspecialchars($sai_date); ?></div>
                 </td>
             </tr>
         </table>
 
-        <!-- Requisition Table -->
-        <div style="margin: 1.5rem 0;">
-            <!--h4 style="margin-top: 0;">REQUISITION</h4-->
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid #000;">
-                <thead>
-                    <tr style="background: #f0f0f0;">
-                        <th style="border: 1px solid #000; padding: 0.5rem; text-align: center; width: 10%;">Stock No.</th>
-                        <th style="border: 1px solid #000; padding: 0.5rem; text-align: center; width: 8%;">Unit</th>
-                        <th style="border: 1px solid #000; padding: 0.5rem; text-align: center; width: 30%;">Description</th>
-                        <th style="border: 1px solid #000; padding: 0.5rem; text-align: center; width: 12%;">Quantity Requested</th>
-                        <th style="border: 1px solid #000; padding: 0.5rem; text-align: center; width: 12%;">Quantity Received</th>
-                        <th style="border: 1px solid #000; padding: 0.5rem; text-align: center; width: 28%;">Remarks</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php 
-                    if ($items_result->num_rows > 0):
-                        while ($item = $items_result->fetch_assoc()): 
-                    ?>
+        <table class="line-items">
+            <thead>
+                <tr>
+                    <th style="width: 12%;">Stock No.</th>
+                    <th style="width: 8%;">Unit</th>
+                    <th style="width: 30%;">Description</th>
+                    <th style="width: 18%;">Qty Requested</th>
+                    <th style="width: 18%;">Qty Received</th>
+                    <th style="width: 14%;">Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if ($items_result->num_rows > 0): ?>
+                    <?php while ($item = $items_result->fetch_assoc()): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($item['stock_number'] ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars($item['unit'] ?? ''); ?></td>
+                            <td style="text-align: left; padding-left: 8px;"><?php echo htmlspecialchars($item['descriptions'] ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($item['quantity_requested'] ?? 0)); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($item['quantity_received'] ?? 0)); ?></td>
+                            <td><?php echo htmlspecialchars($item['remarks'] ?? ''); ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo htmlspecialchars($item['stock_number'] ?? ''); ?></td>
-                        <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo htmlspecialchars($item['unit'] ?? ''); ?></td>
-                        <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo htmlspecialchars($item['descriptions']); ?></td>
-                        <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo $item['quantity_requested']; ?></td>
-                        <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo $item['quantity_received']; ?></td>
-                        <td style="border: 1px solid #000; padding: 0.5rem; text-align: center;"><?php echo htmlspecialchars($item['remarks'] ?? ''); ?></td>
+                        <td colspan="6" style="padding: 14px; text-align: center;">No items found</td>
                     </tr>
-                    <?php 
-                        endwhile;
-                    else:
-                    ?>
-                    <tr>
-                        <td colspan="6" style="border: 1px solid #000; padding: 0.5rem; text-align: center;">No items found</td>
-                    </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-        <!-- Purpose -->
-        <div style="margin: 1rem 0; padding: 0.5rem; border-bottom: 1px solid #000;">
-           <p> Purpose: <strong><?php echo nl2br(htmlspecialchars($form['purpose'] ?? '')); ?></strong></p>
+                <?php endif; ?>
+            </tbody>
+        </table>
+
+        <div class="purpose-box">
+            <span class="title">Purpose:</span>
+            <span class="content"><?php echo nl2br(htmlspecialchars($purpose)); ?></span>
         </div>
 
-        <!-- Signature Block -->
-        <table style="width: 100%; margin-top: 2rem; border-collapse: collapse;">
+        <table class="signature-table">
             <tr>
-                <td style="width: 33%; text-align: center; padding: 1rem;">
-                    <p style="margin-top: 0.5rem; text-align: left;">Requested by</p>
-                    <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 0.5rem;"></div>
-                    <strong><?php echo htmlspecialchars($form['requested_by'] ?? ''); ?></strong><br>
-                    <small><?php echo htmlspecialchars($form['requested_by_designation'] ?? ''); ?></small><br>
-                    <small><?php echo $form['requested_by_date'] ? date('m/d/Y', strtotime($form['requested_by_date'])) : ''; ?></small>
-                    
+                <td>
+                    <span class="sig-label">Requested by</span>
+                    <div class="signature-line"></div>
+                    <span class="signature-name"><?php echo htmlspecialchars($form['requested_by'] ?? ''); ?></span>
+                    <span class="signature-role"><?php echo htmlspecialchars($form['requested_by_designation'] ?? ''); ?></span>
+                    <span class="signature-date"><?php echo !empty($form['requested_by_date']) ? date('m/d/Y', strtotime($form['requested_by_date'])) : ''; ?></span>
                 </td>
-                <td style="width: 33%; text-align: center; padding: 1rem;">
-                    <p style="margin-top: 0.5rem; text-align: left;">Approved by</p>
-                    <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 0.5rem;"></div>
-                    <strong><?php echo htmlspecialchars($form['approved_by'] ?? ''); ?></strong><br>
-                    <small><?php echo htmlspecialchars($form['approved_by_designation'] ?? ''); ?></small><br>
-                    <small><?php echo $form['approved_by_date'] ? date('m/d/Y', strtotime($form['approved_by_date'])) : ''; ?></small>
-                    
+                <td>
+                    <span class="sig-label">Approved by</span>
+                    <div class="signature-line"></div>
+                    <span class="signature-name"><?php echo htmlspecialchars($form['approved_by'] ?? ''); ?></span>
+                    <span class="signature-role"><?php echo htmlspecialchars($form['approved_by_designation'] ?? ''); ?></span>
+                    <span class="signature-date"><?php echo !empty($form['approved_by_date']) ? date('m/d/Y', strtotime($form['approved_by_date'])) : ''; ?></span>
                 </td>
-                <td style="width: 33%; text-align: center; padding: 1rem;">
-                    <p style="margin-top: 0.5rem; text-align: left;">Received by</p>
-                    <div style="height: 60px; border-bottom: 1px solid #000; margin-bottom: 0.5rem;"></div>
-                    <strong><?php echo htmlspecialchars($form['received_by'] ?? ''); ?></strong><br>
-                    <small><?php echo htmlspecialchars($form['received_by_designation'] ?? ''); ?></small><br>
-                    <small><?php echo $form['received_by_date'] ? date('m/d/Y', strtotime($form['received_by_date'])) : ''; ?></small>
-                    
+                <td>
+                    <span class="sig-label">Received by</span>
+                    <div class="signature-line"></div>
+                    <span class="signature-name"><?php echo htmlspecialchars($form['received_by'] ?? ''); ?></span>
+                    <span class="signature-role"><?php echo htmlspecialchars($form['received_by_designation'] ?? ''); ?></span>
+                    <span class="signature-date"><?php echo !empty($form['received_by_date']) ? date('m/d/Y', strtotime($form['received_by_date'])) : ''; ?></span>
                 </td>
             </tr>
         </table>
-    </div>
-
-    <div style="text-align: center; margin-top: 2rem;" class="no-print">
-        <button onclick="window.print()" class="btn btn-primary">Print Form</button>
-        <button onclick="window.close()" class="btn btn-secondary">Close</button>
     </div>
 
     <script>
-        window.onload = function() {
+        window.onload = function () {
             window.focus();
+            window.print();
         };
     </script>
 </body>

@@ -1,12 +1,13 @@
 <?php
 /**
- * Print Single RIS Form
+ * Print Two RIS Forms on One A4 Page
  * RIS Form System - Margosatubig, Zamboanga del Sur LGU
  */
 
 require_once '../config/database.php';
 
 $ris_id = (int) ($_GET['id'] ?? 0);
+
 if ($ris_id <= 0) {
     die('Invalid RIS ID');
 }
@@ -29,29 +30,43 @@ $items_stmt = $conn->prepare(
 $items_stmt->bind_param('i', $ris_id);
 $items_stmt->execute();
 $items_result = $items_stmt->get_result();
+$items = $items_result->fetch_all(MYSQLI_ASSOC);
+$items_stmt->close();
+
+$h = static function ($value): string {
+    return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
+};
+
+$date = static function ($value, string $format = 'm/d/Y'): string {
+    if (empty($value)) {
+        return '';
+    }
+
+    $timestamp = strtotime((string) $value);
+    return $timestamp === false ? '' : date($format, $timestamp);
+};
 
 $generated_at = date('F d, Y H:i:s');
-$office_name = $form['office_name'] ?? 'N/A';
-$responsibility_center = $form['responsibility_center_code'] ?? 'N/A';
 $ris_number = $form['ris_number'] ?? 'N/A';
-$ris_date = !empty($form['ris_date']) ? date('m/d/Y', strtotime($form['ris_date'])) : '';
-$sai_number = $form['sai_number'] ?? 'N/A';
-$sai_date = !empty($form['sai_date']) ? date('m/d/Y', strtotime($form['sai_date'])) : '';
-$purpose = $form['purpose'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RIS Form - <?php echo htmlspecialchars($ris_number); ?></title>
+    <title>RIS Form - <?php echo $h($ris_number); ?></title>
     <style>
         @page {
             size: A4 portrait;
-            margin: 18mm 12mm 16mm 12mm;
+            margin: 8mm 10mm;
         }
 
-        html, body {
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
             margin: 0;
             padding: 0;
             background: #fff;
@@ -59,204 +74,200 @@ $purpose = $form['purpose'] ?? '';
             font-family: Arial, Helvetica, sans-serif;
         }
 
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 0;
-        }
-
         .page {
             width: 100%;
-            max-width: 830px;
-            background: #fff;
+            max-width: 794px;
+            margin: 0 auto;
+        }
+
+        .form-copy {
+            width: 100%;
+            height: 136mm;
+            overflow: hidden;
             padding: 0;
+            page-break-inside: avoid;
         }
 
-        .top-space {
-            height: 8px;
+        .form-copy:first-child {
+            border-bottom: 1.5px dashed #555;
+            margin-bottom: 3mm;
+            padding-bottom: 3mm;
         }
 
-        .header-wrap {
+        .form-header {
+            padding-top: 1mm;
             text-align: center;
-            padding-top: 8px;
         }
 
-        .seal {
-            width: 56px;
-            height: 56px;
-            margin: 0 auto 8px;
-            border-radius: 50%;
-            border: 2px solid #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 12px;
-            background: #f9f9f9;
+        .form-header img {
+            display: block;
+            width: 48mm;
+            height: 15mm;
+            margin: 0 auto 1mm;
+            object-fit: contain;
         }
 
-        .header-wrap p {
+        .form-header p {
             margin: 0;
-            font-size: 18px;
-            line-height: 1.3;
+            font-size: 9pt;
+            line-height: 1.15;
         }
 
-        .header-wrap .title {
-            font-size: 28px;
+        .form-header .municipality {
             font-weight: 700;
-            margin-top: 10px;
+        }
+
+        .form-header .location {
+            font-size: 8pt;
+        }
+
+        .form-header h1 {
+            margin: 2mm 0 1mm;
+            font-size: 14pt;
+            line-height: 1.1;
             letter-spacing: 0.02em;
         }
 
-        .header-wrap .generated {
-            font-size: 15px;
-            font-weight: 600;
-            margin-top: 8px;
-            color: #111;
+        .form-header .generated {
+            font-size: 7pt;
         }
 
         .divider {
-            border-top: 2px solid #000;
-            margin: 14px 0 0;
+            margin: 2mm 0;
+            border-top: 1.2px solid #000;
         }
 
-        .info-table {
+        table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 12px;
-            border: 2px solid #000;
             table-layout: fixed;
         }
 
+        .info-table {
+            border: 1.2px solid #000;
+            margin-bottom: 2mm;
+        }
+
         .info-table td {
+            width: 50%;
+            padding: 1.5mm 2mm;
             border: 1px solid #000;
-            padding: 8px 10px;
+            font-size: 8pt;
+            line-height: 1.25;
             vertical-align: top;
-            font-size: 17px;
-            line-height: 1.4;
-            background: #fff;
-        }
-
-        .info-table td:first-child {
-            width: 50%;
-        }
-
-        .info-table td:last-child {
-            width: 50%;
         }
 
         .label {
             font-weight: 700;
-            text-transform: uppercase;
         }
 
-        .line-items {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-            border: 2px solid #000;
-            table-layout: fixed;
+        .items-table {
+            border: 1.2px solid #000;
+            margin-bottom: 2mm;
         }
 
-        .line-items th,
-        .line-items td {
+        .items-table th,
+        .items-table td {
+            padding: 1.2mm 1mm;
             border: 1px solid #000;
-            padding: 7px 6px;
+            font-size: 7pt;
+            line-height: 1.15;
             text-align: center;
-            font-size: 14px;
             vertical-align: middle;
+            overflow-wrap: anywhere;
         }
 
-        .line-items th {
+        .items-table th {
+            height: 9mm;
             background: #f2f2f2;
-            font-size: 13px;
+            font-size: 6.5pt;
             font-weight: 700;
             text-transform: uppercase;
+        }
+
+        .items-table td.description,
+        .items-table td.remarks {
+            text-align: left;
         }
 
         .purpose-box {
-            width: 100%;
-            border: 2px solid #000;
-            margin-top: 12px;
-            box-sizing: border-box;
-            background: #fff;
+            min-height: 14mm;
+            margin-bottom: 2mm;
+            border: 1.2px solid #000;
         }
 
-        .purpose-box .title {
+        .purpose-title {
             display: block;
-            padding: 8px 10px 0;
-            font-size: 18px;
+            padding: 1.5mm 2mm 0;
+            font-size: 8pt;
             font-weight: 700;
-            text-transform: uppercase;
         }
 
-        .purpose-box .content {
+        .purpose-content {
             display: block;
-            min-height: 34px;
-            padding: 8px 10px 10px;
-            font-size: 15px;
-            line-height: 1.45;
+            padding: 1mm 2mm 1.5mm;
+            font-size: 7.5pt;
+            line-height: 1.2;
         }
 
         .signature-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 16px;
-            border: 2px solid #000;
-            table-layout: fixed;
+            border: 1.2px solid #000;
         }
 
         .signature-table td {
+            width: 33.33%;
+            height: 29mm;
+            padding: 1.5mm 2mm;
             border: 1px solid #000;
-            padding: 8px 10px 6px;
-            text-align: center;
             vertical-align: top;
-            font-size: 13px;
-            background: #fff;
+            text-align: center;
         }
 
-        .signature-table .sig-label {
+        .signature-label {
             display: block;
-            text-align: left;
-            font-size: 13px;
+            margin-bottom: 1mm;
+            font-size: 7.5pt;
             font-weight: 700;
-            margin-bottom: 10px;
-            text-transform: uppercase;
+            text-align: left;
         }
 
         .signature-line {
-            height: 58px;
+            height: 10mm;
+            margin-bottom: 1mm;
             border-bottom: 1px solid #000;
-            margin-bottom: 8px;
         }
 
         .signature-name {
             display: block;
-            font-size: 14px;
+            min-height: 3mm;
+            font-size: 7pt;
             font-weight: 700;
+            line-height: 1.1;
             text-transform: uppercase;
-            line-height: 1.3;
         }
 
-        .signature-role {
-            display: block;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-
+        .signature-role,
         .signature-date {
             display: block;
-            font-size: 12px;
-            line-height: 1.4;
+            min-height: 2.5mm;
+            font-size: 6.5pt;
+            line-height: 1.1;
         }
 
         .no-print {
-            display: none;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .no-print button {
+            margin: 0 4px;
+            padding: 8px 14px;
+            cursor: pointer;
         }
 
         @media print {
-            html, body {
+            html,
+            body {
                 width: 100%;
                 height: 100%;
                 margin: 0;
@@ -265,112 +276,140 @@ $purpose = $form['purpose'] ?? '';
                 -webkit-print-color-adjust: exact;
             }
 
-            body {
-                margin: 0;
-                padding: 0;
+            .page {
+                max-width: none;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .form-copy {
+                page-break-after: auto;
             }
         }
     </style>
 </head>
 <body>
-    <div class="page">
-        <div class="header-wrap">
-            <div class="seal">M</div>
-            <p>Republic of the Philippines</p>
-            <p>Province of Zamboanga del Sur</p>
-            <p style="font-weight: 700; letter-spacing: 0.02em;">MUNICIPALITY OF MARGOSATUBIG</p>
-            <p style="font-size: 16px;">Margosatubig, Zamboanga del Sur</p>
-            <div class="title">REQUISITION AND ISSUE SLIP FORM</div>
-            <div class="generated">Generated: <?php echo htmlspecialchars($generated_at); ?></div>
-        </div>
+    <main class="page">
+        <?php for ($copy = 1; $copy <= 2; $copy++): ?>
+            <section class="form-copy">
+                <header class="form-header">
+                    <img src="../uploads/mto1.png" alt="Municipality logo">
+                    <p>Republic of the Philippines</p>
+                    <p>Province of Zamboanga del Sur</p>
+                    <p class="municipality">MUNICIPALITY OF MARGOSATUBIG</p>
+                    <p class="location">Margosatubig, Zamboanga del Sur</p>
+                    <h1>REQUISITION AND ISSUE SLIP FORM</h1>
+                    <p class="generated">Generated: <?php echo $h($generated_at); ?></p>
+                </header>
 
-        <div class="divider"></div>
+                <div class="divider"></div>
 
-        <table class="info-table">
-            <tr>
-                <td><span class="label">Office:</span> <?php echo htmlspecialchars($office_name); ?></td>
-                <td><span class="label">Responsibility Center:</span> <?php echo htmlspecialchars($responsibility_center); ?></td>
-            </tr>
-            <tr>
-                <td>
-                    <div><span class="label">RIS No.:</span> <?php echo htmlspecialchars($ris_number); ?></div>
-                    <div><span class="label">Date:</span> <?php echo htmlspecialchars($ris_date); ?></div>
-                </td>
-                <td>
-                    <div><span class="label">SAI No.:</span> <?php echo htmlspecialchars($sai_number); ?></div>
-                    <div><span class="label">Date:</span> <?php echo htmlspecialchars($sai_date); ?></div>
-                </td>
-            </tr>
-        </table>
-
-        <table class="line-items">
-            <thead>
-                <tr>
-                    <th style="width: 12%;">Stock No.</th>
-                    <th style="width: 8%;">Unit</th>
-                    <th style="width: 30%;">Description</th>
-                    <th style="width: 18%;">Qty Requested</th>
-                    <th style="width: 18%;">Qty Received</th>
-                    <th style="width: 14%;">Remarks</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($items_result->num_rows > 0): ?>
-                    <?php while ($item = $items_result->fetch_assoc()): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($item['stock_number'] ?? ''); ?></td>
-                            <td><?php echo htmlspecialchars($item['unit'] ?? ''); ?></td>
-                            <td style="text-align: left; padding-left: 8px;"><?php echo htmlspecialchars($item['descriptions'] ?? ''); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($item['quantity_requested'] ?? 0)); ?></td>
-                            <td><?php echo htmlspecialchars((string) ($item['quantity_received'] ?? 0)); ?></td>
-                            <td><?php echo htmlspecialchars($item['remarks'] ?? ''); ?></td>
-                        </tr>
-                    <?php endwhile; ?>
-                <?php else: ?>
+                <table class="info-table">
                     <tr>
-                        <td colspan="6" style="padding: 14px; text-align: center;">No items found</td>
+                        <td>
+                            <span class="label">OFFICE:</span>
+                            <?php echo $h($form['office_name'] ?? 'N/A'); ?>
+                        </td>
+                        <td>
+                            <span class="label">Responsibility Center:</span>
+                            <?php echo $h($form['responsibility_center_code'] ?? 'N/A'); ?>
+                        </td>
                     </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    <tr>
+                        <td>
+                            <span class="label">RIS No.:</span>
+                            <?php echo $h($form['ris_number'] ?? 'N/A'); ?><br>
+                            <span class="label">Date:</span>
+                            <?php echo $h($date($form['ris_date'] ?? null)); ?>
+                        </td>
+                        <td>
+                            <span class="label">SAI No.:</span>
+                            <?php echo $h($form['sai_number'] ?? 'N/A'); ?><br>
+                            <span class="label">Date:</span>
+                            <?php echo $h($date($form['sai_date'] ?? null)); ?>
+                        </td>
+                    </tr>
+                </table>
 
-        <div class="purpose-box">
-            <span class="title">Purpose:</span>
-            <span class="content"><?php echo nl2br(htmlspecialchars($purpose)); ?></span>
-        </div>
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 12%;">Stock No.</th>
+                            <th style="width: 8%;">Unit</th>
+                            <th style="width: 30%;">Description</th>
+                            <th style="width: 18%;">Qty Requested</th>
+                            <th style="width: 18%;">Qty Received</th>
+                            <th style="width: 14%;">Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($items)): ?>
+                            <?php foreach ($items as $item): ?>
+                                <tr>
+                                    <td><?php echo $h($item['stock_number'] ?? ''); ?></td>
+                                    <td><?php echo $h($item['unit'] ?? ''); ?></td>
+                                    <td class="description"><?php echo $h($item['descriptions'] ?? ''); ?></td>
+                                    <td><?php echo $h($item['quantity_requested'] ?? 0); ?></td>
+                                    <td><?php echo $h($item['quantity_received'] ?? 0); ?></td>
+                                    <td class="remarks"><?php echo $h($item['remarks'] ?? ''); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="6">No items found</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
 
-        <table class="signature-table">
-            <tr>
-                <td>
-                    <span class="sig-label">Requested by</span>
-                    <div class="signature-line"></div>
-                    <span class="signature-name"><?php echo htmlspecialchars($form['requested_by'] ?? ''); ?></span>
-                    <span class="signature-role"><?php echo htmlspecialchars($form['requested_by_designation'] ?? ''); ?></span>
-                    <span class="signature-date"><?php echo !empty($form['requested_by_date']) ? date('m/d/Y', strtotime($form['requested_by_date'])) : ''; ?></span>
-                </td>
-                <td>
-                    <span class="sig-label">Approved by</span>
-                    <div class="signature-line"></div>
-                    <span class="signature-name"><?php echo htmlspecialchars($form['approved_by'] ?? ''); ?></span>
-                    <span class="signature-role"><?php echo htmlspecialchars($form['approved_by_designation'] ?? ''); ?></span>
-                    <span class="signature-date"><?php echo !empty($form['approved_by_date']) ? date('m/d/Y', strtotime($form['approved_by_date'])) : ''; ?></span>
-                </td>
-                <td>
-                    <span class="sig-label">Received by</span>
-                    <div class="signature-line"></div>
-                    <span class="signature-name"><?php echo htmlspecialchars($form['received_by'] ?? ''); ?></span>
-                    <span class="signature-role"><?php echo htmlspecialchars($form['received_by_designation'] ?? ''); ?></span>
-                    <span class="signature-date"><?php echo !empty($form['received_by_date']) ? date('m/d/Y', strtotime($form['received_by_date'])) : ''; ?></span>
-                </td>
-            </tr>
-        </table>
+                <div class="purpose-box">
+                    <span class="purpose-title">Purpose:</span>
+                    <span class="purpose-content">
+                        <?php echo nl2br($h($form['purpose'] ?? '')); ?>
+                    </span>
+                </div>
+
+                <table class="signature-table">
+                    <tr>
+                        <td>
+                            <span class="signature-label">Requested by</span>
+                            <div class="signature-line"></div>
+                            <span class="signature-name"><?php echo $h($form['requested_by'] ?? ''); ?></span>
+                            <span class="signature-role"><?php echo $h($form['requested_by_designation'] ?? ''); ?></span>
+                            <span class="signature-date"><?php echo $h($date($form['requested_by_date'] ?? null)); ?></span>
+                        </td>
+                        <td>
+                            <span class="signature-label">Approved by</span>
+                            <div class="signature-line"></div>
+                            <span class="signature-name"><?php echo $h($form['approved_by'] ?? ''); ?></span>
+                            <span class="signature-role"><?php echo $h($form['approved_by_designation'] ?? ''); ?></span>
+                            <span class="signature-date"><?php echo $h($date($form['approved_by_date'] ?? null)); ?></span>
+                        </td>
+                        <td>
+                            <span class="signature-label">Received by</span>
+                            <div class="signature-line"></div>
+                            <span class="signature-name"><?php echo $h($form['received_by'] ?? ''); ?></span>
+                            <span class="signature-role"><?php echo $h($form['received_by_designation'] ?? ''); ?></span>
+                            <span class="signature-date"><?php echo $h($date($form['received_by_date'] ?? null)); ?></span>
+                        </td>
+                    </tr>
+                </table>
+            </section>
+        <?php endfor; ?>
+    </main>
+
+    <div class="no-print">
+        <button type="button" onclick="window.print()">Print</button>
+        <button type="button" onclick="window.close()">Close</button>
     </div>
 
     <script>
-        window.onload = function () {
+        window.addEventListener('load', function () {
             window.focus();
             window.print();
-        };
+        });
     </script>
 </body>
 </html>

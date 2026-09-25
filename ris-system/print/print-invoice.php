@@ -57,14 +57,14 @@ $generated_at = date('F d, Y H:i:s');
 $office = $form['office_name'] ?? '';
 $municipality = 'Margosatubig';
 $province = 'Zamboanga del Sur';
-$requested_by = $form['requested_by'] ?? '';
 $approved_by = $form['approved_by'] ?? '';
-$approved_designation = $form['approved_by_designation'] ?? 'Municipal Treasurer';
+$approved_designation = $form['approved_by_designation'] ?? 'Acting Municipal Treasurer';
 $received_by = $form['received_by'] ?? '';
 $received_designation = $form['received_by_designation'] ?? 'Receiving Officer';
 
-$checked_by = trim((string) ($_GET['checked_by'] ?? $requested_by));
-$witness_name = trim((string) ($_GET['witness_name'] ?? $approved_by));
+/* These two values are intentionally independent and blank by default. */
+$checked_by = trim((string) ($_GET['checked_by'] ?? ''));
+$witness_name = trim((string) ($_GET['witness_name'] ?? ''));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -188,16 +188,32 @@ table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
     <table class="certification-table">
         <tr>
-            <td>Checked by:<br><br><strong><?php echo $h($checked_by ?: '________________'); ?></strong></td>
-            <td><strong><?php echo $h($witness_name ?: '________________'); ?></strong><br><?php echo $h($approved_designation ?: 'Municipal Treasurer'); ?></td>
+            <td>
+                Checked by:<br><br>
+                <strong><?php echo $h($checked_by ?: '________________'); ?></strong>
+            </td>
+            <td>
+                <strong><?php echo $h($approved_by ?: '________________'); ?></strong><br>
+                <?php echo $h($approved_designation ?: 'Acting Municipal Treasurer'); ?>
+            </td>
             <td class="total">TOTAL VALUE<br>₱ 0.00</td>
         </tr>
     </table>
 
     <table class="signatures">
         <tr>
-            <td>I hereby acknowledge receipt of the accountable forms above specified.<br><br><div class="signature-line"></div><span class="signature-name"><?php echo $h($checked_by ?: '________________'); ?></span><span class="signature-role">Witness</span></td>
-            <td>Requisition filed and received in the presence of the undersigned.<br><br><div class="signature-line"></div><span class="signature-name"><?php echo $h($witness_name ?: '________________'); ?></span><span class="signature-role"><?php echo $h($approved_designation ?: 'Municipal Treasurer'); ?></span></td>
+            <td>
+                I hereby acknowledge receipt of the accountable forms above specified.<br><br>
+                <div class="signature-line"></div>
+                <span class="signature-name"><?php echo $h($witness_name ?: '________________'); ?></span>
+                <span class="signature-role">Witness</span>
+            </td>
+            <td>
+                Requisition filed and received in the presence of the undersigned.<br><br>
+                <div class="signature-line"></div>
+                <span class="signature-name"><?php echo $h($approved_by ?: '________________'); ?></span>
+                <span class="signature-role"><?php echo $h($approved_designation ?: 'Acting Municipal Treasurer'); ?></span>
+            </td>
         </tr>
     </table>
 </main>
